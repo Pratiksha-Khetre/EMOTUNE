@@ -82,6 +82,55 @@ const Profile = () => {
   const [isEditingLanguages, setIsEditingLanguages] = useState(false);
   const [playingSongId, setPlayingSongId] = useState(null);
 
+  const floatingEmojis = [
+    "🎵",
+    "🎶",
+    "🎤",
+    "🎧",
+    "🎸",
+    "🎹",
+    "🥁",
+    "🎺",
+    "🎻",
+    "🎼",
+    "😊",
+    "😢",
+    "😠",
+    "😮",
+    "😐",
+    "🤢",
+    "😨",
+    "💜",
+    "💚",
+    "💙",
+    "❤️",
+    "🌟",
+    "✨",
+    "🎭",
+    "🎪",
+  ];
+
+  // Component for floating emojis
+  function FloatingEmoji({ emoji, delay, duration, startX, endX, startY }) {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: `${startX}%`,
+          top: `${startY}%`,
+          fontSize: "44px",
+          opacity: "0.55",
+          animation: `float ${duration}s ease-in-out ${delay}s infinite`,
+          pointerEvents: "none",
+          zIndex: 0,
+          dropshadow: "#a350ff",
+        }}
+      >
+        {emoji}
+      </div>
+    );
+  }
+
   // --- FIREBASE LISTENER & INITIAL LOAD ---
   useEffect(() => {
     // 1. Redirect if not authenticated
@@ -272,13 +321,47 @@ const Profile = () => {
   return (
     <div
       style={{
-        backgroundColor: colors.darkBg,
+        backgroundColor: colors.accentPurple,
         minHeight: "100vh",
         padding: "40px 20px",
-        background: "linear-gradient(135deg, #0f0f1c 0%, #1a1a2e 100%)",
+        background: "linear-gradient(135deg, #171725ff 0%, #20203cff 100%)",
       }}
     >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+      {/* Add CSS keyframes for floating animation */}
+      <style>
+        {`
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0) translateX(0) rotate(0deg);
+            }
+            25% {
+              transform: translateY(-20px) translateX(20px) rotate(5deg);
+            }
+            50% {
+              transform: translateY(-40px) translateX(-20px) rotate(-5deg);
+            }
+            75% {
+              transform: translateY(-20px) translateX(10px) rotate(3deg);
+            }
+          }
+
+        `}
+      </style>
+
+      {/* Floating Emojis Background */}
+      {floatingEmojis.map((emoji, index) => (
+        <FloatingEmoji
+          key={index}
+          emoji={emoji}
+          delay={index * 0.5}
+          duration={8 + (index % 5)}
+          startX={Math.random() * 100}
+          endX={Math.random() * 100}
+          startY={Math.random() * 100}
+        />
+      ))}
+
+      <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "50px" }}>
           <h1

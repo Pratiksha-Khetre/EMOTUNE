@@ -1074,7 +1074,7 @@ import {
   recordEmotion,
   addFavoriteSong,
 } from "../utils/statsTracker";
-import { FiRefreshCw, FiHeart } from "react-icons/fi";
+import { FiRefreshCw, FiHeart, FiItalic } from "react-icons/fi";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -1089,6 +1089,19 @@ const colors = {
   barBg: "#15152a",
   inputCardBgVisible: "#3a1f50",
 };
+
+<div
+  style={{
+    background:
+      "linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 25%, #1e3a5f 50%, #2d1b4e 75%, #1a0b2e 100%)",
+    minHeight: "100vh",
+    width: "100%",
+    margin: 0,
+    padding: "20px",
+    position: "relative",
+    overflow: "hidden",
+  }}
+></div>;
 
 const emotions = [
   { name: "Angry", emoji: "😠" },
@@ -1865,6 +1878,17 @@ export default function MainDashboard() {
               </div>
             )}
 
+            {/* <p>Your smile is the rhythm — let the music be the melody.</p> */}
+            <p
+              style={{
+                color: colors.textLight,
+                fontSize: "20px",
+                fontStyle: "italic",
+              }}
+            >
+              Your smile is the rhythm — let the music be the melody.
+            </p>
+
             <div
               style={{
                 color: colors.textGray,
@@ -2211,7 +2235,7 @@ export default function MainDashboard() {
                 <iframe
                   style={{
                     width: "100%",
-                    height: "352px",
+                    height: "232px",
                     border: "none",
                     borderRadius: "15px",
                   }}

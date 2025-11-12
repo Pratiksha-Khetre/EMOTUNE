@@ -121,6 +121,55 @@ const allLanguages = [
   "Malayalam",
 ];
 
+const floatingEmojis = [
+  "🎵",
+  "🎶",
+  "🎤",
+  "🎧",
+  "🎸",
+  "🎹",
+  "🥁",
+  "🎺",
+  "🎻",
+  "🎼",
+  "😊",
+  "😢",
+  "😠",
+  "😮",
+  "😐",
+  "🤢",
+  "😨",
+  "💜",
+  "💚",
+  "💙",
+  "❤️",
+  "🌟",
+  "✨",
+  "🎭",
+  "🎪",
+];
+
+// Component for floating emojis
+function FloatingEmoji({ emoji, delay, duration, startX, endX, startY }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: `${startX}%`,
+        top: `${startY}%`,
+        fontSize: "44px",
+        opacity: "0.55",
+        animation: `float ${duration}s ease-in-out ${delay}s infinite`,
+        pointerEvents: "none",
+        zIndex: 0,
+        dropshadow: "#a350ff",
+      }}
+    >
+      {emoji}
+    </div>
+  );
+}
+
 const LanguageSelection = () => {
   const navigate = useNavigate();
   const [selectedLanguages, setSelectedLanguages] = useState([]);
@@ -150,6 +199,39 @@ const LanguageSelection = () => {
 
   return (
     <div style={styles.container}>
+      {/* Add CSS keyframes for floating animation */}
+      {/* <style>
+        {`
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0) translateX(0) rotate(0deg);
+            }
+            25% {
+              transform: translateY(-20px) translateX(20px) rotate(5deg);
+            }
+            50% {
+              transform: translateY(-40px) translateX(-20px) rotate(-5deg);
+            }
+            75% {
+              transform: translateY(-20px) translateX(10px) rotate(3deg);
+            }
+          }
+
+        `}
+      </style> */}
+
+      {/* Floating Emojis Background */}
+      {/* {floatingEmojis.map((emoji, index) => (
+        <FloatingEmoji
+          key={index}
+          emoji={emoji}
+          delay={index * 0.5}
+          duration={8 + (index % 5)}
+          startX={Math.random() * 100}
+          endX={Math.random() * 100}
+          startY={Math.random() * 100}
+        />
+      ))} */}
       <div style={styles.selectionBox}>
         <h2 style={styles.title}>Select Your Languages</h2>
         <p style={styles.subtitle}>
