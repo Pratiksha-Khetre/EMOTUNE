@@ -8,7 +8,11 @@ import {
 } from "../utils/statsTracker";
 import { FiRefreshCw, FiHeart, FiItalic } from "react-icons/fi";
 
-import API_BASE_URL from "../config/api";
+// import API_BASE_URL from "../config/api";
+
+const API_BASE_URL = import.meta.env.PROD
+  ? "https://song-recommendation-system-f5zo.onrender.com"
+  : "http://127.0.0.1:8000";
 
 const colors = {
   darkBg: "#0f0f1c",
