@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = "https://song-recommendation-system-f5zo.onrender.com";
 
 console.log("🔧 SpotifyPlayer Mode:", import.meta.env.MODE);
 console.log("🌐 SpotifyPlayer API:", API_BASE_URL);
