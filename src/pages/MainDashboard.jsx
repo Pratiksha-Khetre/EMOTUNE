@@ -10,6 +10,11 @@ import { FiRefreshCw, FiHeart, FiItalic } from "react-icons/fi";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+// Debug logging - helps us see what's happening
+console.log("🔧 Mode:", import.meta.env.MODE);
+console.log("🌐 VITE_API_URL:", import.meta.env.VITE_API_URL);
+console.log("📍 Using API:", API_BASE_URL);
+
 const colors = {
   darkBg: "#0f0f1c",
   cardBg: "#1e1e35",

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+console.log("🔧 SpotifyPlayer Mode:", import.meta.env.MODE);
+console.log("🌐 SpotifyPlayer API:", API_BASE_URL);
+
 const colors = {
   darkBg: "#0f0f1c",
   cardBg: "#1e1e35",
