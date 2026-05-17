@@ -104,6 +104,11 @@ export const incrementSongsPlayed = async () => {
 };
 
 export const recordEmotion = async (emotion) => {
+  if (!emotion || emotion === "undefined") {
+    console.warn("recordEmotion called with invalid emotion:", emotion);
+    return;
+  }
+
   const user = getCurrentUser();
   if (!user) {
     console.error("No user logged in to record emotion.");
