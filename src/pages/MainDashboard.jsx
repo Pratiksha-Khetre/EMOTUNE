@@ -10,6 +10,66 @@ import { FiRefreshCw, FiHeart, FiItalic } from "react-icons/fi";
 
 const API_BASE_URL = "https://emo-backend-6.onrender.com";
 
+
+
+
+
+
+
+
+@app.get("/debug/spotify")
+async def debug_spotify():
+    """Temporary debug endpoint - remove after fixing"""
+    import base64, requests
+    
+    auth_str = f"{SPOTIFY_CLIENT_ID}:{SPOTIFY_CLIENT_SECRET}"
+    auth_bytes = base64.b64encode(auth_str.encode()).decode()
+    
+    headers = {
+        "Authorization": f"Basic {auth_bytes}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    # Step 1: Get token
+    token_response = requests.post(
+        "https://accounts.spotify.com/api/token",
+        headers=headers,
+        data={"grant_type": "client_credentials"},
+        timeout=10
+    )
+    
+    token_result = {
+        "status_code": token_response.status_code,
+        "response": token_response.json()
+    }
+    
+    if token_response.status_code != 200:
+        return {"token_step": token_result, "search_step": "skipped"}
+    
+    # Step 2: Try a simple search
+    token = token_response.json().get("access_token")
+    search_response = requests.get(
+        "https://api.spotify.com/v1/search",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"q": "bollywood happy songs", "type": "track", "limit": 5, "market": "IN"},
+        timeout=10
+    )
+    
+    search_result = {
+        "status_code": search_response.status_code,
+        "track_count": len(search_response.json().get("tracks", {}).get("items", [])),
+        "first_track": search_response.json().get("tracks", {}).get("items", [{}])[0].get("name", "none") if search_response.status_code == 200 else "error",
+        "error": search_response.json() if search_response.status_code != 200 else None
+    }
+    
+    return {"token_step": token_result, "search_step": search_result}
+
+
+
+
+
+
+
 // Debug logging - helps us see what's happening
 console.log("🔧 Mode:", import.meta.env.MODE);
 console.log("🌐 VITE_API_URL:", import.meta.env.VITE_API_URL);
