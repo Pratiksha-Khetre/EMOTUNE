@@ -9,7 +9,7 @@ import {
 import { FiRefreshCw, FiHeart, FiItalic } from "react-icons/fi";
 
 const API_BASE_URL = "https://emo-backend-6.onrender.com";
-
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 
 // Debug logging - helps us see what's happening
 console.log("🔧 Mode:", import.meta.env.MODE);
