@@ -253,25 +253,36 @@ export default function MainDashboard() {
 
         try {
           const response = await fetch(`${API_BASE_URL}/analyze_emotion/`, {
-            method: "POST",
-            body: formData,
-          });
+  method: "POST",
+  body: formData,
+});
 
-          const data = await response.json();
-          const newEmotion = data.predicted_emotion;
-          const confidence = data.confidence;
+if (!response.ok) {
+  const errData = await response.json().catch(() => ({}));
+  throw new Error(
+    errData?.detail?.message || `Server error: ${response.status}`
+  );
+}
 
-          setAnalyzedImageSrc(data.processed_image_b64);
-          setPredictedEmotion(newEmotion);
-          setConfidenceScore(confidence);
-          setSelectedEmotion(newEmotion);
-          setDetectionMethod("Webcam");
+const data = await response.json();
+const newEmotion = data.predicted_emotion;
+const confidence = data.confidence;
 
-          // Track the emotion detection
-          incrementScans();
-          recordEmotion(newEmotion);
+// Guard: don't proceed if emotion is missing
+if (!newEmotion) {
+  throw new Error("No emotion detected. Please try again.");
+}
 
-          fetchRecommendations(newEmotion, 0);
+setAnalyzedImageSrc(data.processed_image_b64);
+setPredictedEmotion(newEmotion);
+setConfidenceScore(confidence);
+setSelectedEmotion(newEmotion);
+setDetectionMethod("Webcam");
+
+incrementScans();
+recordEmotion(newEmotion);  // ← only called with a valid emotion now
+
+fetchRecommendations(newEmotion, 0);
         } catch (err) {
           alert(`Analysis failed: ${err.message}`);
         } finally {
@@ -304,23 +315,30 @@ export default function MainDashboard() {
       body: formData,
     })
       .then((r) => r.json())
-      .then((data) => {
-        const newEmotion = data.predicted_emotion;
-        const confidence = data.confidence;
+      .then((r) => {
+  if (!r.ok) throw new Error(`Server error: ${r.status}`);
+  return r.json();
+})
+.then((data) => {
+  const newEmotion = data.predicted_emotion;
+  const confidence = data.confidence;
 
-        setAnalyzedImageSrc(data.processed_image_b64);
-        setPredictedEmotion(newEmotion);
-        setConfidenceScore(confidence);
-        setSelectedEmotion(newEmotion);
-        setDetectionMethod("Image");
+  if (!newEmotion) {
+    throw new Error("No emotion detected. Please try again.");
+  }
 
-        // Track the emotion detection
-        incrementScans();
-        recordEmotion(newEmotion);
+  setAnalyzedImageSrc(data.processed_image_b64);
+  setPredictedEmotion(newEmotion);
+  setConfidenceScore(confidence);
+  setSelectedEmotion(newEmotion);
+  setDetectionMethod("Image");
 
-        fetchRecommendations(newEmotion, 0);
-      })
-      .catch((err) => alert(`Upload failed: ${err.message}`));
+  incrementScans();
+  recordEmotion(newEmotion);
+
+  fetchRecommendations(newEmotion, 0);
+})
+.catch((err) => alert(`Upload failed: ${err.message}`));
   };
 
   const handleRefreshSongs = async () => {
