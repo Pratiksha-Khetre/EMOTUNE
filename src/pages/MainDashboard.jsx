@@ -8,7 +8,7 @@ import {
 } from "../utils/statsTracker";
 import { FiRefreshCw, FiHeart, FiItalic } from "react-icons/fi";
 
-const API_BASE_URL = "https://song-recommendation-system-f5zo.onrender.com";
+const API_BASE_URL = "https://emo-backend-6.onrender.com";
 
 // Debug logging - helps us see what's happening
 console.log("🔧 Mode:", import.meta.env.MODE);
