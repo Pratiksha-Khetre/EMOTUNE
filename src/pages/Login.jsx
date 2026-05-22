@@ -8,220 +8,8 @@ import {
   AiOutlineEye,
   AiOutlineEyeInvisible,
 } from "react-icons/ai";
-// Import real auth functions and context (Assuming these exist)
 import { loginUser, loginWithGoogle } from "../utils/authService";
 import { useAuth } from "../context/AuthContext";
-
-// --- REFINED EMOJI LIST ---
-const floatingEmojis = [
-  // Music & Vibe
-  "🎧",
-  "🎤",
-  "🎶",
-  "🎵",
-  "💜",
-  "✨",
-  "🌟",
-  // Emotion/Detection
-  "😊",
-  "😮",
-  "😢",
-  "😠",
-  "🎭",
-  // Login & Access
-  "🚀",
-  "🔑",
-  "🔒",
-  "🔓",
-  "🚪",
-  // Fun Mix
-  "🥳",
-  "💙",
-  "💚",
-  "💖",
-  "🎉",
-];
-
-// Component for floating emojis
-function FloatingEmoji({ emoji, delay, duration, startX, startY }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${startX}%`,
-        top: `${startY}%`,
-        fontSize: "44px",
-        opacity: "0.55",
-        // Applies the 'float' keyframe animation
-        animation: `float ${duration}s ease-in-out ${delay}s infinite alternate both`,
-        pointerEvents: "none",
-        zIndex: 0, // Behind the form
-        filter: "drop-shadow(0 0 5px #a350ff)",
-      }}
-    >
-      {emoji}
-    </div>
-  );
-}
-
-const styles = {
-  container: {
-    minHeight: "calc(100vh - 70px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background:
-      "linear-gradient(135deg, #0f0f1c 0%, #1a1a2e 50%, #16213e 100%)",
-    padding: "20px",
-    position: "relative",
-    overflow: "hidden", // CRUCIAL for containing floating elements
-  },
-  backgroundCircle: {
-    position: "absolute",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(163, 80, 255, 0.1) 0%, transparent 70%)",
-  },
-  formBox: {
-    backgroundColor: "rgba(30, 30, 53, 0.95)",
-    backdropFilter: "blur(10px)",
-    padding: "50px 40px",
-    borderRadius: "25px",
-    boxShadow:
-      "0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(163, 80, 255, 0.1)",
-    width: "100%",
-    maxWidth: "450px",
-    border: "1px solid rgba(163, 80, 255, 0.2)",
-    position: "relative",
-    zIndex: 10, // Ensure form is on top
-  },
-  title: {
-    textAlign: "center",
-    background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    marginBottom: "10px",
-    fontSize: "36px",
-    fontWeight: "900",
-    letterSpacing: "1px",
-  },
-  subtitle: {
-    textAlign: "center",
-    color: "#b0b0c2",
-    marginBottom: "35px",
-    fontSize: "14px",
-  },
-  inputGroup: {
-    position: "relative",
-    marginBottom: "20px",
-  },
-  inputIcon: {
-    position: "absolute",
-    left: "15px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    fontSize: "20px",
-    color: "#a350ff",
-    pointerEvents: "none",
-    zIndex: 2,
-  },
-  input: {
-    width: "100%",
-    padding: "15px 15px 15px 50px",
-    borderRadius: "12px",
-    border: "2px solid rgba(163, 80, 255, 0.2)",
-    backgroundColor: "rgba(43, 43, 75, 0.5)",
-    color: "#f0f0f0",
-    fontSize: "16px",
-    boxSizing: "border-box",
-    transition: "all 0.3s ease",
-    outline: "none",
-  },
-  passwordToggle: {
-    position: "absolute",
-    right: "15px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    fontSize: "20px",
-    color: "#a350ff",
-    cursor: "pointer",
-    zIndex: 3,
-  },
-  button: {
-    width: "100%",
-    padding: "15px",
-    borderRadius: "12px",
-    border: "none",
-    background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-    color: "white",
-    fontSize: "18px",
-    fontWeight: "700",
-    cursor: "pointer",
-    marginTop: "25px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 5px 25px rgba(163, 80, 255, 0.4)",
-  },
-  googleButton: {
-    width: "100%",
-    padding: "15px",
-    borderRadius: "12px",
-    border: "2px solid rgba(255, 255, 255, 0.1)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    color: "#f0f0f0",
-    fontSize: "16px",
-    fontWeight: "600",
-    cursor: "pointer",
-    marginTop: "15px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    transition: "all 0.3s ease",
-  },
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    margin: "25px 0",
-    color: "#b0b0c2",
-    fontSize: "14px",
-  },
-  dividerLine: {
-    flex: 1,
-    height: "1px",
-    background:
-      "linear-gradient(to right, transparent, rgba(163, 80, 255, 0.3), transparent)",
-  },
-  forgotLink: {
-    textAlign: "right",
-    marginTop: "10px",
-    fontSize: "13px",
-  },
-  linkText: {
-    display: "block",
-    textAlign: "center",
-    marginTop: "25px",
-    color: "#a0a0a0",
-    fontSize: "14px",
-  },
-  purpleLink: {
-    background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    textDecoration: "none",
-    fontWeight: "700",
-    marginLeft: "5px",
-  },
-  errorMsg: {
-    backgroundColor: "rgba(255, 107, 107, 0.2)",
-    border: "1px solid rgba(255, 107, 107, 0.5)",
-    color: "#ff6b6b",
-    padding: "12px",
-    borderRadius: "10px",
-    marginBottom: "15px",
-    fontSize: "14px",
-    textAlign: "center",
-  },
-};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -231,27 +19,11 @@ const Login = () => {
   const [focusedInput, setFocusedInput] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // --- CSS Injection for Keyframes (Makes movement possible) ---
   useEffect(() => {
-    const styleElement = document.createElement("style");
-    styleElement.type = "text/css";
-    styleElement.innerHTML = `
-      @keyframes float {
-        0% { transform: translateY(0px) translateX(0px) rotate(0deg) scale(1); }
-        33% { transform: translateY(-30px) translateX(20px) rotate(5deg) scale(1.05); }
-        66% { transform: translateY(-10px) translateX(-20px) rotate(-5deg) scale(0.95); }
-        100% { transform: translateY(0px) translateX(0px) rotate(0deg) scale(1); }
-      }
-    `;
-    document.head.appendChild(styleElement);
-
-    return () => {
-      // Clean up the injected style when the component unmounts
-      document.head.removeChild(styleElement);
-    };
+    setMounted(true);
   }, []);
-  // -----------------------------------------------------------
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -262,7 +34,6 @@ const Login = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg("");
-
     try {
       await loginUser(formData.email, formData.password);
       const shouldRedirectToMain = hasSetLanguage();
@@ -270,13 +41,11 @@ const Login = () => {
     } catch (error) {
       setIsSubmitting(false);
       let message = "Login failed. Please check your credentials.";
-      if (error.code === "auth/invalid-credential") {
+      if (error.code === "auth/invalid-credential")
         message = "Invalid email or password.";
-      } else if (error.code === "auth/too-many-requests") {
-        message =
-          "Access temporarily blocked due to too many failed attempts. Try again later.";
-      }
-      setErrorMsg(`❌ ${message}`);
+      else if (error.code === "auth/too-many-requests")
+        message = "Too many attempts. Try again later.";
+      setErrorMsg(message);
     }
   };
 
@@ -289,196 +58,408 @@ const Login = () => {
       navigate(shouldRedirectToMain ? "/main" : "/language", { replace: true });
     } catch (error) {
       setIsSubmitting(false);
-      setErrorMsg("❌ Google login failed. Please try again.");
+      setErrorMsg("Google sign-in failed. Please try again.");
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
-    <div style={styles.container}>
-      {/* --- Floating Emojis: Random but Evenly Distributed Placement --- */}
-      {floatingEmojis.map((emoji, index) => {
-        // Random Placement between 5% and 95% (90% range + 5% offset)
-        const startX = Math.random() * 90 + 5;
-        const startY = Math.random() * 90 + 5;
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Mono:wght@300;400;500&display=swap');
 
-        // Highly Staggered Movement
-        const duration = 7 + Math.random() * 6; // Random speed between 7s and 13s
-        const delay = Math.random() * 10; // Random start delay up to 10s
+        .et-page {
+          min-height: calc(100vh - 70px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #080810;
+          padding: 20px;
+          position: relative;
+          overflow: hidden;
+          font-family: 'DM Mono', monospace;
+        }
 
-        return (
-          <FloatingEmoji
-            key={index}
-            emoji={emoji}
-            delay={delay}
-            duration={duration}
-            startX={startX}
-            startY={startY}
-          />
-        );
-      })}
-      {/* --------------------------------------------------------------- */}
+        .et-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          pointer-events: none;
+          animation: orbPulse 8s ease-in-out infinite alternate;
+        }
 
-      {/* Animated background circles */}
-      <div
-        style={{
-          ...styles.backgroundCircle,
-          width: "300px",
-          height: "300px",
-          top: "-100px",
-          left: "-100px",
-          animation: "float 6s ease-in-out infinite alternate both",
-        }}
-      />
-      <div
-        style={{
-          ...styles.backgroundCircle,
-          width: "400px",
-          height: "400px",
-          bottom: "-150px",
-          right: "-150px",
-          animation: "float 8s ease-in-out infinite alternate both",
-          animationDelay: "3s",
-        }}
-      />
+        .et-orb-1 {
+          width: 500px; height: 500px;
+          top: -200px; left: -150px;
+          background: radial-gradient(circle, rgba(99,60,180,0.35) 0%, transparent 70%);
+          animation-delay: 0s;
+        }
 
-      <form style={styles.formBox} onSubmit={handleSubmit}>
-        <h2 style={styles.title}>Welcome Back! 👋</h2>
-        <p style={styles.subtitle}>Login to continue your vibe</p>
+        .et-orb-2 {
+          width: 400px; height: 400px;
+          bottom: -150px; right: -100px;
+          background: radial-gradient(circle, rgba(180,60,120,0.25) 0%, transparent 70%);
+          animation-delay: -3s;
+        }
 
-        {errorMsg && <div style={styles.errorMsg}>{errorMsg}</div>}
+        .et-orb-3 {
+          width: 300px; height: 300px;
+          top: 50%; left: 60%;
+          background: radial-gradient(circle, rgba(60,120,200,0.2) 0%, transparent 70%);
+          animation-delay: -6s;
+        }
 
-        <div style={styles.inputGroup}>
-          <AiOutlineMail style={styles.inputIcon} />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            style={{
-              ...styles.input,
-              borderColor:
-                focusedInput === "email"
-                  ? "#a350ff"
-                  : "rgba(163, 80, 255, 0.2)",
-              boxShadow:
-                focusedInput === "email"
-                  ? "0 0 20px rgba(163, 80, 255, 0.3)"
-                  : "none",
-            }}
-            value={formData.email}
-            onChange={handleChange}
-            onFocus={() => setFocusedInput("email")}
-            onBlur={() => setFocusedInput(null)}
-            required
-          />
-        </div>
+        @keyframes orbPulse {
+          from { transform: scale(1) translate(0, 0); opacity: 0.8; }
+          to { transform: scale(1.2) translate(20px, -20px); opacity: 1; }
+        }
 
-        <div style={styles.inputGroup}>
-          <AiOutlineLock style={styles.inputIcon} />
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            placeholder="Password"
-            style={{
-              ...styles.input,
-              paddingRight: "50px",
-              borderColor:
-                focusedInput === "password"
-                  ? "#a350ff"
-                  : "rgba(163, 80, 255, 0.2)",
-              boxShadow:
-                focusedInput === "password"
-                  ? "0 0 20px rgba(163, 80, 255, 0.3)"
-                  : "none",
-            }}
-            value={formData.password}
-            onChange={handleChange}
-            onFocus={() => setFocusedInput("password")}
-            onBlur={() => setFocusedInput(null)}
-            required
-          />
-          <span
-            style={styles.passwordToggle}
-            onClick={togglePasswordVisibility}
-            title={showPassword ? "Hide password" : "Show password"}
+        .et-noise {
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+          pointer-events: none;
+          opacity: 0.4;
+        }
+
+        .et-card {
+          background: rgba(14, 14, 28, 0.8);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          padding: 52px 44px;
+          width: 100%;
+          max-width: 440px;
+          position: relative;
+          z-index: 10;
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 32px 64px rgba(0,0,0,0.6);
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .et-card.mounted {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .et-wordmark {
+          display: flex;
+          align-items: baseline;
+          justify-content: center;
+          gap: 6px;
+          margin-bottom: 32px;
+        }
+
+        .et-wordmark-main {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 38px;
+          font-weight: 300;
+          color: #f0eef8;
+          letter-spacing: 2px;
+        }
+
+        .et-wordmark-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #9b6dff, #e060c0);
+          margin-bottom: 4px;
+          flex-shrink: 0;
+          box-shadow: 0 0 12px rgba(155,109,255,0.7);
+        }
+
+        .et-heading {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 28px;
+          font-weight: 400;
+          color: #f0eef8;
+          text-align: center;
+          margin: 0 0 6px;
+          letter-spacing: 0.5px;
+        }
+
+        .et-sub {
+          font-size: 11px;
+          color: rgba(180,170,210,0.6);
+          text-align: center;
+          margin: 0 0 36px;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+        }
+
+        .et-error {
+          background: rgba(220,60,80,0.12);
+          border: 1px solid rgba(220,60,80,0.3);
+          color: #f07080;
+          padding: 12px 16px;
+          border-radius: 10px;
+          font-size: 12px;
+          margin-bottom: 20px;
+          letter-spacing: 0.3px;
+        }
+
+        .et-field {
+          position: relative;
+          margin-bottom: 16px;
+        }
+
+        .et-field-icon {
+          position: absolute;
+          left: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: rgba(155,109,255,0.6);
+          font-size: 16px;
+          pointer-events: none;
+          z-index: 2;
+        }
+
+        .et-input {
+          width: 100%;
+          padding: 14px 16px 14px 44px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          color: #f0eef8;
+          font-family: 'DM Mono', monospace;
+          font-size: 13px;
+          box-sizing: border-box;
+          transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+          outline: none;
+          letter-spacing: 0.3px;
+        }
+
+        .et-input::placeholder {
+          color: rgba(180,170,210,0.35);
+          font-size: 12px;
+          letter-spacing: 0.5px;
+        }
+
+        .et-input:focus {
+          border-color: rgba(155,109,255,0.5);
+          background: rgba(155,109,255,0.06);
+          box-shadow: 0 0 0 3px rgba(155,109,255,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .et-eye-toggle {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: rgba(180,170,210,0.4);
+          cursor: pointer;
+          font-size: 16px;
+          z-index: 3;
+          transition: color 0.2s;
+          padding: 4px;
+        }
+
+        .et-eye-toggle:hover { color: rgba(155,109,255,0.8); }
+
+        .et-forgot {
+          text-align: right;
+          margin: -4px 0 24px;
+        }
+
+        .et-forgot a {
+          font-size: 11px;
+          color: rgba(155,109,255,0.6);
+          text-decoration: none;
+          letter-spacing: 0.5px;
+          transition: color 0.2s;
+        }
+
+        .et-forgot a:hover { color: rgba(155,109,255,1); }
+
+        .et-btn-primary {
+          width: 100%;
+          padding: 14px;
+          background: linear-gradient(135deg, #7c4dff 0%, #c060d0 100%);
+          border: none;
+          border-radius: 12px;
+          color: #fff;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+          box-shadow: 0 8px 24px rgba(124,77,255,0.3);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .et-btn-primary::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .et-btn-primary:hover::before { opacity: 1; }
+        .et-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(124,77,255,0.4); }
+        .et-btn-primary:active { transform: translateY(0); }
+        .et-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .et-divider {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin: 24px 0;
+        }
+
+        .et-divider-line {
+          flex: 1;
+          height: 1px;
+          background: rgba(255,255,255,0.06);
+        }
+
+        .et-divider span {
+          font-size: 11px;
+          color: rgba(180,170,210,0.4);
+          letter-spacing: 1px;
+        }
+
+        .et-btn-google {
+          width: 100%;
+          padding: 13px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          color: rgba(240,238,248,0.85);
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          font-weight: 400;
+          letter-spacing: 1px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: background 0.2s, border-color 0.2s, transform 0.2s;
+        }
+
+        .et-btn-google:hover {
+          background: rgba(255,255,255,0.08);
+          border-color: rgba(155,109,255,0.3);
+          transform: translateY(-1px);
+        }
+
+        .et-btn-google:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .et-footer-link {
+          text-align: center;
+          margin-top: 28px;
+          font-size: 11px;
+          color: rgba(180,170,210,0.45);
+          letter-spacing: 0.5px;
+        }
+
+        .et-footer-link a {
+          color: rgba(155,109,255,0.9);
+          text-decoration: none;
+          margin-left: 6px;
+          transition: color 0.2s;
+        }
+
+        .et-footer-link a:hover { color: #c090ff; }
+      `}</style>
+
+      <div className="et-page">
+        <div className="et-orb et-orb-1" />
+        <div className="et-orb et-orb-2" />
+        <div className="et-orb et-orb-3" />
+        <div className="et-noise" />
+
+        <div className={`et-card ${mounted ? "mounted" : ""}`}>
+          <div className="et-wordmark">
+            <span className="et-wordmark-main">EmoTune</span>
+            <div className="et-wordmark-dot" />
+          </div>
+
+          <h1 className="et-heading">Welcome back</h1>
+          <p className="et-sub">Sign in to your account</p>
+
+          {errorMsg && <div className="et-error">{errorMsg}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="et-field">
+              <AiOutlineMail className="et-field-icon" />
+              <input
+                className="et-input"
+                type="email"
+                name="email"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={handleChange}
+                onFocus={() => setFocusedInput("email")}
+                onBlur={() => setFocusedInput(null)}
+                required
+              />
+            </div>
+
+            <div className="et-field">
+              <AiOutlineLock className="et-field-icon" />
+              <input
+                className="et-input"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                style={{ paddingRight: "44px" }}
+                value={formData.password}
+                onChange={handleChange}
+                onFocus={() => setFocusedInput("password")}
+                onBlur={() => setFocusedInput(null)}
+                required
+              />
+              <span
+                className="et-eye-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+              </span>
+            </div>
+
+            <div className="et-forgot">
+              <Link to="/forgot-password">Forgot password?</Link>
+            </div>
+
+            <button
+              className="et-btn-primary"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+          <div className="et-divider">
+            <div className="et-divider-line" />
+            <span>or</span>
+            <div className="et-divider-line" />
+          </div>
+
+          <button
+            className="et-btn-google"
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isSubmitting}
           >
-            {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-          </span>
+            <FcGoogle size={18} />
+            Continue with Google
+          </button>
+
+          <p className="et-footer-link">
+            Don't have an account?
+            <Link to="/register">Create one</Link>
+          </p>
         </div>
-
-        <div style={styles.forgotLink}>
-          <Link
-            to="/forgot-password"
-            style={{
-              color: "#a350ff",
-              cursor: "pointer",
-              textDecoration: "none",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => (e.target.style.color = "#d957ff")}
-            onMouseLeave={(e) => (e.target.style.color = "#a350ff")}
-          >
-            Forgot Password?
-          </Link>
-        </div>
-
-        <button
-          type="submit"
-          style={{
-            ...styles.button,
-            opacity: isSubmitting ? 0.7 : 1,
-            transform: isSubmitting ? "scale(0.98)" : "scale(1)",
-          }}
-          disabled={isSubmitting}
-          onMouseEnter={(e) =>
-            !isSubmitting && (e.target.style.transform = "translateY(-2px)")
-          }
-          onMouseLeave={(e) =>
-            !isSubmitting && (e.target.style.transform = "translateY(0)")
-          }
-        >
-          {isSubmitting ? "Logging in... 🎵" : "Login 🚀"}
-        </button>
-
-        <div style={styles.divider}>
-          <div style={styles.dividerLine} />
-          <span style={{ margin: "0 15px" }}>or</span>
-          <div style={styles.dividerLine} />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          style={styles.googleButton}
-          disabled={isSubmitting}
-          onMouseEnter={(e) => {
-            if (!isSubmitting) {
-              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-              e.target.style.borderColor = "rgba(163, 80, 255, 0.5)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSubmitting) {
-              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
-              e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
-            }
-          }}
-        >
-          <FcGoogle size={24} />
-          Continue with Google
-        </button>
-
-        <p style={styles.linkText}>
-          Don't have an account?
-          <Link to="/register" style={styles.purpleLink}>
-            Sign Up
-          </Link>
-        </p>
-      </form>
-    </div>
+      </div>
+    </>
   );
 };
 
