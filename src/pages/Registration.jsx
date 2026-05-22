@@ -1,130 +1,10 @@
 // src/pages/Registration.jsx
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { AiOutlineMail, AiOutlineLock, AiOutlineUser } from "react-icons/ai"; // Added AiOutlineUser for name input
-
-// Correct path resolution for utilities
+import { AiOutlineMail, AiOutlineLock, AiOutlineUser } from "react-icons/ai";
 import { auth } from "../utils/firebaseConfig";
 import { initializeUserProfile } from "../utils/statsTracker";
-
-// --- REPLICATED LOGIN STYLES ---
-const styles = {
-  container: {
-    minHeight: "calc(100vh - 70px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background:
-      "linear-gradient(135deg, #0f0f1c 0%, #1a1a2e 50%, #16213e 100%)",
-    padding: "20px",
-    position: "relative",
-    overflow: "hidden",
-  },
-  backgroundCircle: {
-    position: "absolute",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(163, 80, 255, 0.1) 0%, transparent 70%)",
-    animation: "float 6s ease-in-out infinite",
-  },
-  formBox: {
-    backgroundColor: "rgba(30, 30, 53, 0.95)",
-    backdropFilter: "blur(10px)",
-    padding: "50px 40px",
-    borderRadius: "25px",
-    boxShadow:
-      "0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(163, 80, 255, 0.1)",
-    width: "100%",
-    maxWidth: "450px",
-    border: "1px solid rgba(163, 80, 255, 0.2)",
-    position: "relative",
-    zIndex: 1,
-  },
-  title: {
-    textAlign: "center",
-    background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    marginBottom: "10px",
-    fontSize: "36px",
-    fontWeight: "900",
-    letterSpacing: "1px",
-  },
-  subtitle: {
-    textAlign: "center",
-    color: "#b0b0c2",
-    marginBottom: "35px",
-    fontSize: "14px",
-  },
-  inputGroup: {
-    position: "relative",
-    marginBottom: "20px",
-  },
-  inputIcon: {
-    position: "absolute",
-    left: "15px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    fontSize: "20px",
-    color: "#a350ff",
-    pointerEvents: "none",
-  },
-  input: {
-    width: "100%",
-    padding: "15px 15px 15px 50px",
-    borderRadius: "12px",
-    border: "2px solid rgba(163, 80, 255, 0.2)",
-    backgroundColor: "rgba(43, 43, 75, 0.5)",
-    color: "#f0f0f0",
-    fontSize: "16px",
-    boxSizing: "border-box",
-    transition: "all 0.3s ease",
-    outline: "none",
-  },
-  button: {
-    width: "100%",
-    padding: "15px",
-    borderRadius: "12px",
-    border: "none",
-    background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-    color: "white",
-    fontSize: "18px",
-    fontWeight: "700",
-    cursor: "pointer",
-    marginTop: "25px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 5px 25px rgba(163, 80, 255, 0.4)",
-  },
-  linkText: {
-    display: "block",
-    textAlign: "center",
-    marginTop: "25px",
-    color: "#a0a0a0",
-    fontSize: "14px",
-  },
-  purpleLink: {
-    background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    textDecoration: "none",
-    fontWeight: "700",
-    marginLeft: "5px",
-    transition: "all 0.3s ease",
-  },
-  errorMsg: {
-    backgroundColor: "rgba(255, 107, 107, 0.2)",
-    border: "1px solid rgba(255, 107, 107, 0.5)",
-    color: "#ff6b6b",
-    padding: "12px",
-    borderRadius: "10px",
-    marginBottom: "15px",
-    fontSize: "14px",
-    textAlign: "center",
-  },
-};
-// ----------------------------
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -136,6 +16,11 @@ const Registration = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedInput, setFocusedInput] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -145,275 +30,204 @@ const Registration = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
-
     if (!formData.name || !formData.email || !formData.password) {
       setErrorMsg("All fields are required.");
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      // 1. Firebase Auth Registration
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
-        formData.password
+        formData.password,
       );
       let user = userCredential.user;
-
-      // 2. Set Display Name on the Auth record
       await updateProfile(user, { displayName: formData.name });
-
-      // Re-assign user to get the updated displayName property locally
       user = { ...user, displayName: formData.name };
-
-      // 3. INITIALIZE FIRESTORE PROFILE DATA (Crucial step)
       await initializeUserProfile(user);
-
-      // 4. Navigate to dashboard (or language selector, depending on your app flow)
       navigate("/dashboard", { replace: true });
     } catch (authError) {
       setIsSubmitting(false);
       let message = "Registration failed. Please try again.";
-      if (authError.code === "auth/email-already-in-use") {
+      if (authError.code === "auth/email-already-in-use")
         message = "This email is already registered.";
-      } else if (authError.code === "auth/weak-password") {
+      else if (authError.code === "auth/weak-password")
         message = "Password should be at least 6 characters.";
-      }
-      setErrorMsg(`❌ ${message}`);
-      console.error("Registration Error:", authError);
+      setErrorMsg(message);
     }
   };
-
-  const floatingEmojis = [
-    "🎵",
-    "🎶",
-    "🎤",
-    "🎧",
-    "🎸",
-    "🎹",
-    "🥁",
-    "🎺",
-    "🎻",
-    "🎼",
-    "😊",
-    "😢",
-    "😠",
-    "😮",
-    "😐",
-    "🤢",
-    "😨",
-    "💜",
-    "💚",
-    "💙",
-    "❤️",
-    "🌟",
-    "✨",
-    "🎭",
-    "🎪",
-  ];
-
-  // Component for floating emojis
-  function FloatingEmoji({ emoji, delay, duration, startX, endX, startY }) {
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: `${startX}%`,
-          top: `${startY}%`,
-          fontSize: "44px",
-          opacity: "0.55",
-          animation: `float ${duration}s ease-in-out ${delay}s infinite`,
-          pointerEvents: "none",
-          zIndex: 0,
-          dropshadow: "#a350ff",
-        }}
-      >
-        {emoji}
-      </div>
-    );
-  }
 
   const isButtonDisabled =
     isSubmitting || !formData.name || !formData.email || !formData.password;
 
   return (
-    <div style={styles.container}>
-      {/* Animated background circles (using inline <style> tag for keyframes below) */}
-      {/* Add CSS keyframes for floating animation */}
-      <style>
-        {`
-          @keyframes float {
-            0%, 100% {
-              transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            25% {
-              transform: translateY(-20px) translateX(20px) rotate(5deg);
-            }
-            50% {
-              transform: translateY(-40px) translateX(-20px) rotate(-5deg);
-            }
-            75% {
-              transform: translateY(-20px) translateX(10px) rotate(3deg);
-            }
-          }
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Mono:wght@300;400;500&display=swap');
 
-        `}
-      </style>
+        .et-page {
+          min-height: calc(100vh - 70px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #080810;
+          padding: 20px;
+          position: relative;
+          overflow: hidden;
+          font-family: 'DM Mono', monospace;
+        }
+        .et-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; animation: orbPulse 8s ease-in-out infinite alternate; }
+        .et-orb-1 { width: 500px; height: 500px; top: -200px; right: -150px; background: radial-gradient(circle, rgba(180,60,120,0.3) 0%, transparent 70%); }
+        .et-orb-2 { width: 400px; height: 400px; bottom: -150px; left: -100px; background: radial-gradient(circle, rgba(99,60,180,0.3) 0%, transparent 70%); animation-delay: -4s; }
+        .et-orb-3 { width: 250px; height: 250px; top: 40%; left: 55%; background: radial-gradient(circle, rgba(60,140,200,0.18) 0%, transparent 70%); animation-delay: -2s; }
+        @keyframes orbPulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.25) translate(15px,-15px); opacity: 1; } }
+        .et-noise { position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events: none; opacity: 0.4; }
 
-      {/* Floating Emojis Background */}
-      {floatingEmojis.map((emoji, index) => (
-        <FloatingEmoji
-          key={index}
-          emoji={emoji}
-          delay={index * 0.5}
-          duration={8 + (index % 5)}
-          startX={Math.random() * 100}
-          endX={Math.random() * 100}
-          startY={Math.random() * 100}
-        />
-      ))}
-      <div
-        style={{
-          ...styles.backgroundCircle,
-          width: "300px",
-          height: "300px",
-          top: "-100px",
-          left: "-100px",
-        }}
-      />
-      <div
-        style={{
-          ...styles.backgroundCircle,
-          width: "400px",
-          height: "400px",
-          bottom: "-150px",
-          right: "-150px",
-          animationDelay: "3s",
-        }}
-      />
+        .et-card {
+          background: rgba(14,14,28,0.82);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          padding: 52px 44px;
+          width: 100%; max-width: 440px;
+          position: relative; z-index: 10;
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 32px 64px rgba(0,0,0,0.6);
+          opacity: 0; transform: translateY(20px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .et-card.mounted { opacity: 1; transform: translateY(0); }
 
-      <form style={styles.formBox} onSubmit={handleSubmit}>
-        <h2 style={styles.title}>Join the Vibe! ✨</h2>
-        <p style={styles.subtitle}>Create your new account in seconds</p>
+        .et-wordmark { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin-bottom: 32px; }
+        .et-wordmark-main { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: #f0eef8; letter-spacing: 2px; }
+        .et-wordmark-dot { width: 7px; height: 7px; border-radius: 50%; background: linear-gradient(135deg, #9b6dff, #e060c0); flex-shrink: 0; box-shadow: 0 0 12px rgba(155,109,255,0.7); }
 
-        {/* Error Message Display */}
-        {errorMsg && <div style={styles.errorMsg}>{errorMsg}</div>}
+        .et-heading { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: #f0eef8; text-align: center; margin: 0 0 6px; letter-spacing: 0.5px; }
+        .et-sub { font-size: 11px; color: rgba(180,170,210,0.6); text-align: center; margin: 0 0 36px; letter-spacing: 1.5px; text-transform: uppercase; }
 
-        {/* 1. Name Input */}
-        <div style={styles.inputGroup}>
-          <AiOutlineUser style={styles.inputIcon} />
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            style={{
-              ...styles.input,
-              borderColor:
-                focusedInput === "name" ? "#a350ff" : "rgba(163, 80, 255, 0.2)",
-              boxShadow:
-                focusedInput === "name"
-                  ? "0 0 20px rgba(163, 80, 255, 0.3)"
-                  : "none",
-            }}
-            value={formData.name}
-            onChange={handleChange}
-            onFocus={() => setFocusedInput("name")}
-            onBlur={() => setFocusedInput(null)}
-            required
-          />
+        .et-error { background: rgba(220,60,80,0.12); border: 1px solid rgba(220,60,80,0.3); color: #f07080; padding: 12px 16px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; letter-spacing: 0.3px; }
+
+        .et-field { position: relative; margin-bottom: 16px; }
+        .et-field-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: rgba(155,109,255,0.6); font-size: 16px; pointer-events: none; z-index: 2; }
+        .et-input { width: 100%; padding: 14px 16px 14px 44px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #f0eef8; font-family: 'DM Mono', monospace; font-size: 13px; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; outline: none; letter-spacing: 0.3px; }
+        .et-input::placeholder { color: rgba(180,170,210,0.35); font-size: 12px; letter-spacing: 0.5px; }
+        .et-input:focus { border-color: rgba(155,109,255,0.5); background: rgba(155,109,255,0.06); box-shadow: 0 0 0 3px rgba(155,109,255,0.08), inset 0 1px 0 rgba(255,255,255,0.04); }
+
+        .et-btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #7c4dff 0%, #c060d0 100%); border: none; border-radius: 12px; color: #fff; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s; box-shadow: 0 8px 24px rgba(124,77,255,0.3); position: relative; overflow: hidden; margin-top: 8px; }
+        .et-btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); opacity: 0; transition: opacity 0.2s; }
+        .et-btn-primary:hover::before { opacity: 1; }
+        .et-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(124,77,255,0.4); }
+        .et-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .et-footer-link { text-align: center; margin-top: 28px; font-size: 11px; color: rgba(180,170,210,0.45); letter-spacing: 0.5px; }
+        .et-footer-link a { color: rgba(155,109,255,0.9); text-decoration: none; margin-left: 6px; transition: color 0.2s; }
+        .et-footer-link a:hover { color: #c090ff; }
+
+        .et-strength { margin-top: 6px; display: flex; gap: 4px; }
+        .et-strength-bar { height: 3px; flex: 1; border-radius: 2px; background: rgba(255,255,255,0.06); transition: background 0.3s; }
+        .et-strength-bar.active-weak { background: #e05060; }
+        .et-strength-bar.active-med { background: #d0a040; }
+        .et-strength-bar.active-strong { background: #40d080; }
+      `}</style>
+
+      <div className="et-page">
+        <div className="et-orb et-orb-1" />
+        <div className="et-orb et-orb-2" />
+        <div className="et-orb et-orb-3" />
+        <div className="et-noise" />
+
+        <div className={`et-card ${mounted ? "mounted" : ""}`}>
+          <div className="et-wordmark">
+            <span className="et-wordmark-main">EmoTune</span>
+            <div className="et-wordmark-dot" />
+          </div>
+
+          <h1 className="et-heading">Create account</h1>
+          <p className="et-sub">Begin your sonic journey</p>
+
+          {errorMsg && <div className="et-error">{errorMsg}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="et-field">
+              <AiOutlineUser className="et-field-icon" />
+              <input
+                className="et-input"
+                type="text"
+                name="name"
+                placeholder="Full name"
+                value={formData.name}
+                onChange={handleChange}
+                onFocus={() => setFocusedInput("name")}
+                onBlur={() => setFocusedInput(null)}
+                required
+              />
+            </div>
+
+            <div className="et-field">
+              <AiOutlineMail className="et-field-icon" />
+              <input
+                className="et-input"
+                type="email"
+                name="email"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={handleChange}
+                onFocus={() => setFocusedInput("email")}
+                onBlur={() => setFocusedInput(null)}
+                required
+              />
+            </div>
+
+            <div className="et-field">
+              <AiOutlineLock className="et-field-icon" />
+              <input
+                className="et-input"
+                type="password"
+                name="password"
+                placeholder="Password — min. 6 characters"
+                value={formData.password}
+                onChange={handleChange}
+                onFocus={() => setFocusedInput("password")}
+                onBlur={() => setFocusedInput(null)}
+                required
+              />
+              {formData.password.length > 0 && (
+                <div className="et-strength">
+                  {[0, 1, 2].map((i) => {
+                    const len = formData.password.length;
+                    const cls =
+                      len < 6
+                        ? "active-weak"
+                        : len < 10
+                          ? "active-med"
+                          : "active-strong";
+                    return (
+                      <div
+                        key={i}
+                        className={`et-strength-bar ${i === 0 ? cls : i === 1 && len >= 6 ? cls : i === 2 && len >= 10 ? cls : ""}`}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <button
+              className="et-btn-primary"
+              type="submit"
+              disabled={isButtonDisabled}
+            >
+              {isSubmitting ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+
+          <p className="et-footer-link">
+            Already have an account?
+            <Link to="/login">Sign in</Link>
+          </p>
         </div>
-
-        {/* 2. Email Input */}
-        <div style={styles.inputGroup}>
-          <AiOutlineMail style={styles.inputIcon} />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            style={{
-              ...styles.input,
-              borderColor:
-                focusedInput === "email"
-                  ? "#a350ff"
-                  : "rgba(163, 80, 255, 0.2)",
-              boxShadow:
-                focusedInput === "email"
-                  ? "0 0 20px rgba(163, 80, 255, 0.3)"
-                  : "none",
-            }}
-            value={formData.email}
-            onChange={handleChange}
-            onFocus={() => setFocusedInput("email")}
-            onBlur={() => setFocusedInput(null)}
-            required
-          />
-        </div>
-
-        {/* 3. Password Input */}
-        <div style={styles.inputGroup}>
-          <AiOutlineLock style={styles.inputIcon} />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password (min 6 characters)"
-            style={{
-              ...styles.input,
-              borderColor:
-                focusedInput === "password"
-                  ? "#a350ff"
-                  : "rgba(163, 80, 255, 0.2)",
-              boxShadow:
-                focusedInput === "password"
-                  ? "0 0 20px rgba(163, 80, 255, 0.3)"
-                  : "none",
-            }}
-            value={formData.password}
-            onChange={handleChange}
-            onFocus={() => setFocusedInput("password")}
-            onBlur={() => setFocusedInput(null)}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          style={{
-            ...styles.button,
-            opacity: isButtonDisabled ? 0.7 : 1,
-            transform: isSubmitting ? "scale(0.98)" : "scale(1)",
-            cursor: isButtonDisabled ? "not-allowed" : "pointer",
-          }}
-          disabled={isButtonDisabled}
-          onMouseEnter={(e) =>
-            !isButtonDisabled && (e.target.style.transform = "translateY(-2px)")
-          }
-          onMouseLeave={(e) =>
-            !isButtonDisabled && (e.target.style.transform = "translateY(0)")
-          }
-        >
-          {isSubmitting ? "Creating Account... 🎵" : "Register Now 🚀"}
-        </button>
-
-        <p style={styles.linkText}>
-          Already have an account?
-          <Link to="/login" style={styles.purpleLink}>
-            Log In
-          </Link>
-        </p>
-      </form>
-
-      {/* CSS for Keyframes (needed for the background animation) */}
-      <style>
-        {`
-                    @keyframes float {
-                        0%, 100% { transform: translateY(0px) rotate(0deg); }
-                        50% { transform: translateY(-20px) rotate(5deg); }
-                    }
-                `}
-      </style>
-    </div>
+      </div>
+    </>
   );
 };
 
