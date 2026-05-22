@@ -1,14 +1,10 @@
 // src/pages/Profile.jsx
-import { onSnapshot, doc, getDoc } from "firebase/firestore"; // <-- Import 'doc' from here
-import { db } from "/src/utils/firebaseConfig.js"; // <-- Import your Firestore instance (db) from here
-// ... rest of your code
+import { onSnapshot, doc } from "firebase/firestore";
+import { db } from "/src/utils/firebaseConfig.js";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// Use Firebase-based imports
 import { updateUserProfileData, resetStats } from "../utils/statsTracker";
 import { getCurrentUser, logoutUser, onAuthChange } from "../utils/authService";
-
-// Icon imports
 import {
   FiTrendingUp,
   FiMusic,
@@ -17,18 +13,6 @@ import {
   FiPlay,
   FiTrash2,
 } from "react-icons/fi";
-
-// --- STYLES AND CONSTANTS (Keep these as they were) ---
-const colors = {
-  darkBg: "#0f0f1c",
-  cardBg: "#1e1e35",
-  accentPurple: "#a350ff",
-  neonGreen: "#39ff14",
-  textLight: "#f0f0f0",
-  textGray: "#b0b0c2",
-  coralRed: "#ff6b6b",
-  inputCardBgVisible: "#3a1f50",
-};
 
 const allLanguages = [
   "Hindi",
@@ -52,15 +36,17 @@ const emotionEmojis = {
   Sad: "😢",
   Surprise: "😮",
 };
-// --------------------------------------------------------
 
 const Profile = () => {
   const navigate = useNavigate();
-  const currentUser = getCurrentUser(); // Get user for UID
+  const currentUser = getCurrentUser();
+  const [activeTab, setActiveTab] = useState("profile");
+  const [isEditingLanguages, setIsEditingLanguages] = useState(false);
+  const [playingSongId, setPlayingSongId] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Combined state for all user data from Firestore
   const [userData, setUserData] = useState({
-    name: "Loading User...",
+    name: "Loading...",
     email: "loading@emotune.com",
     memberSince: "N/A",
     profilePic: null,
@@ -73,84 +59,24 @@ const Profile = () => {
       favoriteSongs: [],
       recentEmotions: [],
     },
-    settings: {
-      autoPlay: true,
-      defaultEmotion: "Neutral",
-    },
+    settings: { autoPlay: true, defaultEmotion: "Neutral" },
   });
 
-  const [isEditingLanguages, setIsEditingLanguages] = useState(false);
-  const [playingSongId, setPlayingSongId] = useState(null);
-
-  const floatingEmojis = [
-    "🎵",
-    "🎶",
-    "🎤",
-    "🎧",
-    "🎸",
-    "🎹",
-    "🥁",
-    "🎺",
-    "🎻",
-    "🎼",
-    "😊",
-    "😢",
-    "😠",
-    "😮",
-    "😐",
-    "🤢",
-    "😨",
-    "💜",
-    "💚",
-    "💙",
-    "❤️",
-    "🌟",
-    "✨",
-    "🎭",
-    "🎪",
-  ];
-
-  // Component for floating emojis
-  function FloatingEmoji({ emoji, delay, duration, startX, endX, startY }) {
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: `${startX}%`,
-          top: `${startY}%`,
-          fontSize: "44px",
-          opacity: "0.55",
-          animation: `float ${duration}s ease-in-out ${delay}s infinite`,
-          pointerEvents: "none",
-          zIndex: 0,
-          dropshadow: "#a350ff",
-        }}
-      >
-        {emoji}
-      </div>
-    );
-  }
-
-  // --- FIREBASE LISTENER & INITIAL LOAD ---
   useEffect(() => {
-    // 1. Redirect if not authenticated
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (!currentUser) {
-      console.log("User not logged in. Redirecting.");
       navigate("/login");
       return;
     }
-
-    // 2. Set up Firestore Real-time Listener (onSnapshot)
-    // This listener fetches data immediately and then whenever it changes on the server.
     const userDocRef = doc(db, "users", currentUser.uid);
-
     const unsubscribe = onSnapshot(
       userDocRef,
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-
-          // Update the combined state object
           setUserData({
             name: data.name || "User",
             email: data.email || currentUser.email,
@@ -171,9 +97,6 @@ const Profile = () => {
             },
           });
         } else {
-          // Document doesn't exist (First-time login/Registration complete)
-          // Initialize the user's document with default data
-          console.log("User document not found. Initializing profile.");
           updateUserProfileData({
             name: currentUser.displayName || "New User",
             email: currentUser.email,
@@ -190,54 +113,37 @@ const Profile = () => {
               favoriteSongs: [],
               recentEmotions: [],
             },
-            settings: {
-              autoPlay: true,
-              defaultEmotion: "Neutral",
-            },
+            settings: { autoPlay: true, defaultEmotion: "Neutral" },
           });
         }
       },
-      (error) => {
-        // This is where the 400 Bad Request would appear if security rules deny access
-        console.error(
-          "Firestore Listen Error (400 Bad Request likely here):",
-          error
-        );
-        // The error name 'undefined' and message 'undefined' are often caused by the 400 response from Google API.
-      }
+      (error) => console.error("Firestore error:", error),
     );
-
-    // Cleanup function to detach the listener when the component unmounts
     return () => unsubscribe();
   }, [currentUser, navigate]);
 
-  // Destructure for cleaner access in JSX
-  const { name, email, memberSince, profilePic } = userData;
-  const { selectedLanguages, stats, settings } = userData;
-
-  // --- HANDLERS USING FIREBASE/UTILITY FUNCTIONS ---
+  const {
+    name,
+    email,
+    memberSince,
+    profilePic,
+    selectedLanguages,
+    stats,
+    settings,
+  } = userData;
 
   const handleLanguageToggle = (lang) => {
-    const currentLanguages = selectedLanguages;
-    let newLanguages;
-
-    if (currentLanguages.includes(lang)) {
-      newLanguages = currentLanguages.filter((l) => l !== lang);
-    } else if (currentLanguages.length < 5) {
-      newLanguages = [...currentLanguages, lang];
-    } else {
-      return; // Max 5 languages
-    }
-
-    // Optimistic UI update (update local state immediately)
-    setUserData((prev) => ({ ...prev, selectedLanguages: newLanguages }));
+    const newLangs = selectedLanguages.includes(lang)
+      ? selectedLanguages.filter((l) => l !== lang)
+      : selectedLanguages.length < 5
+        ? [...selectedLanguages, lang]
+        : selectedLanguages;
+    setUserData((prev) => ({ ...prev, selectedLanguages: newLangs }));
   };
 
   const handleSaveLanguages = async () => {
-    // Save the new languages to Firestore
     await updateUserProfileData({ selectedLanguages });
     setIsEditingLanguages(false);
-    alert("Languages updated successfully! 🎵");
   };
 
   const handleProfilePicChange = (e) => {
@@ -245,229 +151,460 @@ const Profile = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const newProfilePic = reader.result;
-        // Save the new image data (base64) to Firestore
-        await updateUserProfileData({ profilePic: newProfilePic });
-        // State update happens via the onSnapshot listener, so no need for explicit setUserData here
-        alert("Profile picture updated! 📸");
+        await updateUserProfileData({ profilePic: reader.result });
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSaveProfile = async () => {
-    // Save the updated name to Firestore
     await updateUserProfileData({ name });
-    alert("Profile updated successfully! ✨");
   };
 
   const handleSettingToggle = async (setting) => {
     const newSettings = { ...settings, [setting]: !settings[setting] };
-    // Save the new settings to Firestore
     await updateUserProfileData({ settings: newSettings });
-    // State update happens via the onSnapshot listener
   };
 
   const handleRemoveFavorite = async (songId) => {
-    const updatedFavorites = stats.favoriteSongs.filter(
-      (song) => song.id !== songId
-    );
-
-    // Save the new favorite list to Firestore
+    const updatedFavorites = stats.favoriteSongs.filter((s) => s.id !== songId);
     await updateUserProfileData({
       stats: { ...stats, favoriteSongs: updatedFavorites },
     });
-    // State update happens via the onSnapshot listener
-  };
-
-  const handleDeleteAccount = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone. 😢"
-      )
-    ) {
-      // NOTE: You must use the Firebase Admin SDK on a secure backend (Cloud Functions)
-      // to *actually* delete a user's account permanently for security reasons.
-      // This front-end function only clears data and logs out.
-
-      // Simulate data clearance (which Firestore listener would handle)
-      // ... (your localStorage cleanup removed as it's now Firestore based) ...
-
-      // Logout the user and navigate
-      logoutUser();
-      navigate("/login");
-    }
   };
 
   const handleLogout = () => {
     logoutUser();
     navigate("/login");
-    // window.location.reload(); // Usually not needed with proper React Router navigation
   };
 
-  const handlePlaySong = (songId) => {
-    setPlayingSongId(songId);
-    // In a real app, this would trigger playback in a global player component.
+  const handleDeleteAccount = () => {
+    if (window.confirm("Delete your account? This action cannot be undone.")) {
+      logoutUser();
+      navigate("/login");
+    }
   };
 
-  const getTopEmotions = () => {
-    const emotions = Object.entries(stats.emotionCounts || {})
+  const getTopEmotions = () =>
+    Object.entries(stats.emotionCounts || {})
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
-    return emotions;
-  };
 
-  // --- JSX RENDER (Keep original structure for styling) ---
+  const tabs = [
+    { id: "profile", label: "Profile", icon: "👤" },
+    { id: "stats", label: "Stats", icon: "📊" },
+    { id: "music", label: "Music", icon: "🎵" },
+    { id: "settings", label: "Settings", icon: "⚙️" },
+  ];
+
   return (
-    <div
-      style={{
-        backgroundColor: colors.accentPurple,
-        minHeight: "100vh",
-        padding: "40px 20px",
-        background: "linear-gradient(135deg, #171725ff 0%, #20203cff 100%)",
-      }}
-    >
-      {/* Add CSS keyframes for floating animation */}
-      <style>
-        {`
-          @keyframes float {
-            0%, 100% {
-              transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            25% {
-              transform: translateY(-20px) translateX(20px) rotate(5deg);
-            }
-            50% {
-              transform: translateY(-40px) translateX(-20px) rotate(-5deg);
-            }
-            75% {
-              transform: translateY(-20px) translateX(10px) rotate(3deg);
-            }
-          }
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Mono:wght@300;400;500&display=swap');
 
-        `}
-      </style>
+        .pf-page {
+          min-height: calc(100vh - 66px);
+          background: #080810;
+          font-family: 'DM Mono', monospace;
+          color: #f0eef8;
+          position: relative;
+          overflow-x: hidden;
+        }
 
-      {/* Floating Emojis Background */}
-      {floatingEmojis.map((emoji, index) => (
-        <FloatingEmoji
-          key={index}
-          emoji={emoji}
-          delay={index * 0.5}
-          duration={8 + (index % 5)}
-          startX={Math.random() * 100}
-          endX={Math.random() * 100}
-          startY={Math.random() * 100}
-        />
-      ))}
+        .pf-orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; animation: pfPulse 10s ease-in-out infinite alternate; }
+        .pf-orb-1 { width: 700px; height: 700px; top: -300px; left: -200px; background: radial-gradient(circle, rgba(99,60,180,0.2) 0%, transparent 70%); z-index: 0; }
+        .pf-orb-2 { width: 500px; height: 500px; bottom: -200px; right: -150px; background: radial-gradient(circle, rgba(180,60,140,0.15) 0%, transparent 70%); animation-delay: -5s; z-index: 0; }
+        @keyframes pfPulse { from { transform: scale(1); } to { transform: scale(1.15) translate(20px,-20px); } }
+        .pf-noise { position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events: none; opacity: 0.35; z-index: 0; }
 
-      <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "50px" }}>
-          <h1
-            style={{
-              background: "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontSize: "42px",
-              fontWeight: "900",
-              marginBottom: "10px",
-              letterSpacing: "2px",
-            }}
-          >
-            Your Vibe Profile 🎧
-          </h1>
-          <p style={{ color: colors.textGray, fontSize: "16px" }}>
-            Manage your account, stats & music preferences
-          </p>
-        </div>
+        .pf-content {
+          position: relative; z-index: 1;
+          max-width: 960px; margin: 0 auto;
+          padding: 40px 28px 60px;
+          opacity: 0; transform: translateY(16px);
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .pf-content.mounted { opacity: 1; transform: translateY(0); }
 
-        {/* Main Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "30px",
-          }}
-        >
-          {/* LEFT COLUMN */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "30px" }}
-          >
-            {/* Basic Info Card */}
-            <div
-              style={{
-                backgroundColor: "rgba(30, 30, 53, 0.8)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "20px",
-                padding: "35px",
-                border: "1px solid rgba(163, 80, 255, 0.2)",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-              }}
-            >
-              <h2
-                style={{
-                  color: colors.textLight,
-                  fontSize: "22px",
-                  fontWeight: "700",
-                  marginBottom: "25px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
+        /* HEADER */
+        .pf-header { margin-bottom: 40px; }
+        .pf-header-eyebrow { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(155,109,255,0.6); margin-bottom: 8px; display: block; }
+        .pf-header-title { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 300; color: #f0eef8; letter-spacing: 1px; margin: 0; }
+
+        /* TABS */
+        .pf-tabs {
+          display: flex;
+          gap: 4px;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 12px;
+          padding: 4px;
+          margin-bottom: 32px;
+          width: fit-content;
+        }
+
+        .pf-tab {
+          padding: 9px 20px;
+          border-radius: 9px;
+          font-size: 11px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          cursor: pointer;
+          border: none;
+          background: none;
+          color: rgba(180,170,210,0.5);
+          font-family: 'DM Mono', monospace;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .pf-tab:hover { color: rgba(240,238,248,0.7); }
+        .pf-tab.active { background: rgba(155,109,255,0.12); color: rgba(155,109,255,0.9); box-shadow: 0 0 0 1px rgba(155,109,255,0.2); }
+
+        /* CARDS */
+        .pf-card {
+          background: rgba(12,12,24,0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 18px;
+          overflow: hidden;
+        }
+
+        .pf-card + .pf-card { margin-top: 16px; }
+
+        .pf-card-header {
+          padding: 22px 26px 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .pf-card-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 20px;
+          font-weight: 400;
+          color: #f0eef8;
+          letter-spacing: 0.5px;
+        }
+
+        .pf-card-body { padding: 20px 26px 26px; }
+
+        /* GRID */
+        .pf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 700px) { .pf-grid-2 { grid-template-columns: 1fr; } }
+
+        /* AVATAR */
+        .pf-avatar-section {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          padding: 24px 26px;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .pf-avatar {
+          width: 72px; height: 72px;
+          border-radius: 50%;
+          border: 1px solid rgba(155,109,255,0.3);
+          background: rgba(155,109,255,0.1);
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden;
+          flex-shrink: 0;
+          font-size: 24px;
+          box-shadow: 0 0 24px rgba(155,109,255,0.15);
+        }
+
+        .pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .pf-avatar-meta { flex: 1; min-width: 0; }
+        .pf-avatar-name { font-size: 18px; font-weight: 500; color: #f0eef8; margin-bottom: 4px; letter-spacing: 0.3px; }
+        .pf-avatar-since { font-size: 11px; color: rgba(155,109,255,0.6); letter-spacing: 1px; }
+
+        .pf-avatar-change-btn {
+          padding: 7px 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 8px;
+          color: rgba(180,170,210,0.6);
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 1px;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+
+        .pf-avatar-change-btn:hover { background: rgba(155,109,255,0.1); border-color: rgba(155,109,255,0.3); color: rgba(155,109,255,0.8); }
+
+        /* FORM */
+        .pf-field { margin-bottom: 14px; }
+        .pf-label { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(180,170,210,0.4); margin-bottom: 8px; }
+
+        .pf-input {
+          width: 100%; padding: 12px 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 10px;
+          color: #f0eef8;
+          font-family: 'DM Mono', monospace;
+          font-size: 13px;
+          box-sizing: border-box;
+          outline: none;
+          transition: border-color 0.2s, background 0.2s;
+          letter-spacing: 0.3px;
+        }
+
+        .pf-input:focus { border-color: rgba(155,109,255,0.4); background: rgba(155,109,255,0.05); }
+        .pf-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .pf-select {
+          width: 100%; padding: 12px 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(155,109,255,0.2);
+          border-radius: 10px;
+          color: #f0eef8;
+          font-family: 'DM Mono', monospace;
+          font-size: 13px;
+          box-sizing: border-box;
+          outline: none;
+          cursor: pointer;
+        }
+
+        .pf-select option { background: #0e0e1c; }
+
+        /* BUTTONS */
+        .pf-btn-primary {
+          padding: 12px 22px;
+          background: linear-gradient(135deg, #7c4dff 0%, #c060d0 100%);
+          border: none; border-radius: 10px;
+          color: #fff; font-family: 'DM Mono', monospace;
+          font-size: 11px; font-weight: 500;
+          letter-spacing: 2px; text-transform: uppercase;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+          box-shadow: 0 6px 20px rgba(124,77,255,0.25);
+        }
+        .pf-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(124,77,255,0.35); }
+
+        .pf-btn-secondary {
+          padding: 12px 22px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 10px;
+          color: rgba(180,170,210,0.7);
+          font-family: 'DM Mono', monospace;
+          font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .pf-btn-secondary:hover { background: rgba(155,109,255,0.08); border-color: rgba(155,109,255,0.25); color: rgba(155,109,255,0.8); }
+
+        .pf-btn-danger {
+          padding: 12px 22px;
+          background: rgba(220,60,60,0.08);
+          border: 1px solid rgba(220,60,60,0.2);
+          border-radius: 10px;
+          color: rgba(220,80,80,0.8);
+          font-family: 'DM Mono', monospace;
+          font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .pf-btn-danger:hover { background: rgba(220,60,60,0.15); border-color: rgba(220,60,60,0.4); color: rgba(240,100,100,0.9); }
+
+        /* STATS */
+        .pf-stat-row {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 16px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .pf-stat-row:last-of-type { border-bottom: none; }
+
+        .pf-stat-label {
+          display: flex; align-items: center; gap: 10px;
+          font-size: 12px; color: rgba(180,170,210,0.6); letter-spacing: 0.5px;
+        }
+
+        .pf-stat-icon {
+          width: 32px; height: 32px;
+          border-radius: 8px;
+          background: rgba(155,109,255,0.08);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 14px;
+        }
+
+        .pf-stat-value { font-size: 22px; font-weight: 500; color: #f0eef8; letter-spacing: -0.5px; }
+
+        .pf-emotion-bar-row { margin-bottom: 12px; }
+        .pf-emotion-bar-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .pf-emotion-bar-label { font-size: 12px; color: rgba(180,170,210,0.7); }
+        .pf-emotion-bar-count { font-size: 12px; color: rgba(155,109,255,0.8); }
+        .pf-emotion-bar-track { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+        .pf-emotion-bar-fill { height: 100%; background: linear-gradient(90deg, #7c4dff, #c060d0); border-radius: 2px; transition: width 0.6s ease; }
+
+        /* LANGUAGES */
+        .pf-lang-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+
+        .pf-lang-chip {
+          padding: 10px 14px;
+          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.03);
+          color: rgba(180,170,210,0.65);
+          font-size: 12px; cursor: pointer; letter-spacing: 0.3px;
+          transition: all 0.2s;
+          text-align: center;
+        }
+        .pf-lang-chip:hover { border-color: rgba(155,109,255,0.3); color: #f0eef8; background: rgba(155,109,255,0.06); }
+        .pf-lang-chip.selected { border-color: rgba(155,109,255,0.5); background: rgba(155,109,255,0.1); color: rgba(155,109,255,0.9); }
+
+        .pf-lang-display { font-size: 14px; color: rgba(155,109,255,0.8); line-height: 1.8; }
+        .pf-lang-none { font-size: 12px; color: rgba(180,170,210,0.35); letter-spacing: 0.5px; }
+
+        /* SONGS */
+        .pf-song-row {
+          display: flex; align-items: center; gap: 12px;
+          padding: 12px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .pf-song-row:last-child { border-bottom: none; }
+
+        .pf-song-thumb {
+          width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0;
+          background: rgba(155,109,255,0.08);
+          border: 1px solid rgba(155,109,255,0.1);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 18px; overflow: hidden;
+        }
+        .pf-song-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .pf-song-info { flex: 1; min-width: 0; }
+        .pf-song-title { font-size: 13px; color: #f0eef8; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; }
+        .pf-song-artist { font-size: 11px; color: rgba(180,170,210,0.45); }
+
+        .pf-song-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+        .pf-song-btn {
+          width: 30px; height: 30px;
+          border-radius: 50%;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.04);
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          color: rgba(180,170,210,0.6);
+          transition: all 0.2s;
+          font-size: 12px;
+        }
+        .pf-song-btn:hover { background: rgba(155,109,255,0.1); border-color: rgba(155,109,255,0.3); color: rgba(155,109,255,0.8); }
+        .pf-song-btn.remove:hover { background: rgba(220,60,60,0.1); border-color: rgba(220,60,60,0.3); color: rgba(220,80,80,0.8); }
+
+        /* TOGGLE */
+        .pf-toggle-row {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 16px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .pf-toggle-label { font-size: 13px; color: rgba(180,170,210,0.7); letter-spacing: 0.3px; }
+        .pf-toggle-sub { font-size: 11px; color: rgba(180,170,210,0.35); margin-top: 2px; }
+
+        .pf-toggle-switch {
+          width: 44px; height: 24px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.08);
+          cursor: pointer;
+          position: relative;
+          transition: background 0.3s, border-color 0.3s;
+          flex-shrink: 0;
+        }
+        .pf-toggle-switch.on {
+          background: rgba(124,77,255,0.3);
+          border-color: rgba(124,77,255,0.4);
+          box-shadow: 0 0 12px rgba(124,77,255,0.2);
+        }
+        .pf-toggle-thumb {
+          position: absolute;
+          top: 3px; left: 3px;
+          width: 16px; height: 16px;
+          border-radius: 50%;
+          background: rgba(180,170,210,0.5);
+          transition: transform 0.3s, background 0.3s;
+        }
+        .pf-toggle-switch.on .pf-toggle-thumb {
+          transform: translateX(20px);
+          background: linear-gradient(135deg, #9b6dff, #e060c0);
+        }
+
+        /* INLINE ACTIONS ROW */
+        .pf-actions-row { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+
+        /* EMPTY */
+        .pf-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 40px 20px; }
+        .pf-empty-icon { font-size: 28px; opacity: 0.4; }
+        .pf-empty-text { font-size: 12px; color: rgba(180,170,210,0.35); letter-spacing: 0.5px; }
+
+        .pf-section-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(180,170,210,0.35); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+
+        .pf-inline-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 1px; color: rgba(155,109,255,0.6); background: rgba(155,109,255,0.08); border: 1px solid rgba(155,109,255,0.15); border-radius: 4px; padding: 3px 8px; }
+      `}</style>
+
+      <div className="pf-page">
+        <div className="pf-orb pf-orb-1" />
+        <div className="pf-orb pf-orb-2" />
+        <div className="pf-noise" />
+
+        <div className={`pf-content ${mounted ? "mounted" : ""}`}>
+          {/* Header */}
+          <div className="pf-header">
+            <span className="pf-header-eyebrow">Account</span>
+            <h1 className="pf-header-title">Your Profile</h1>
+          </div>
+
+          {/* Tabs */}
+          <div className="pf-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={`pf-tab ${activeTab === tab.id ? "active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
               >
-                <span>👤</span> Basic Information
-              </h2>
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
 
-              {/* Profile Picture */}
-              <div style={{ textAlign: "center", marginBottom: "30px" }}>
-                <div
-                  style={{
-                    width: "140px",
-                    height: "140px",
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-                    margin: "0 auto 20px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "60px",
-                    border: "4px solid rgba(163, 80, 255, 0.3)",
-                    overflow: "hidden",
-                    boxShadow: "0 0 30px rgba(163, 80, 255, 0.4)",
-                  }}
-                >
+          {/* ===== PROFILE TAB ===== */}
+          {activeTab === "profile" && (
+            <div className="pf-card">
+              <div className="pf-avatar-section">
+                <div className="pf-avatar">
                   {profilePic ? (
-                    <img
-                      src={profilePic}
-                      alt="Profile"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
+                    <img src={profilePic} alt="Profile" />
                   ) : (
-                    "👤"
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="rgba(155,109,255,0.5)"
+                      strokeWidth="1.5"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
                   )}
                 </div>
-                <label
-                  style={{
-                    padding: "10px 20px",
-                    background:
-                      "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-                    color: colors.textLight,
-                    borderRadius: "25px",
-                    cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: "700",
-                    boxShadow: "0 5px 20px rgba(163, 80, 255, 0.4)",
-                    transition: "all 0.3s ease",
-                    display: "inline-block",
-                  }}
-                >
-                  📸 Change Photo
+                <div className="pf-avatar-meta">
+                  <div className="pf-avatar-name">{name}</div>
+                  <div className="pf-avatar-since">
+                    Member since {memberSince}
+                  </div>
+                </div>
+                <label className="pf-avatar-change-btn">
+                  Change photo
                   <input
                     type="file"
                     accept="image/*"
@@ -477,846 +614,340 @@ const Profile = () => {
                 </label>
               </div>
 
-              {/* User Details */}
-              <div style={{ marginBottom: "18px" }}>
-                <label
-                  style={{
-                    color: colors.textGray,
-                    fontSize: "12px",
-                    marginBottom: "8px",
-                    display: "block",
-                    fontWeight: "600",
-                  }}
-                >
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) =>
-                    setUserData({ ...userData, name: e.target.value })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    backgroundColor: colors.inputCardBgVisible,
-                    border: "2px solid rgba(163, 80, 255, 0.2)",
-                    borderRadius: "10px",
-                    color: colors.textLight,
-                    fontSize: "15px",
-                    boxSizing: "border-box",
-                    outline: "none",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) =>
-                    (e.target.style.borderColor = colors.accentPurple)
-                  }
-                  onBlur={(e) =>
-                    (e.target.style.borderColor = "rgba(163, 80, 255, 0.2)")
-                  }
-                />
-              </div>
-
-              <div style={{ marginBottom: "18px" }}>
-                <label
-                  style={{
-                    color: colors.textGray,
-                    fontSize: "12px",
-                    marginBottom: "8px",
-                    display: "block",
-                    fontWeight: "600",
-                  }}
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  disabled
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    backgroundColor: colors.inputCardBgVisible,
-                    border: "2px solid rgba(163, 80, 255, 0.1)",
-                    borderRadius: "10px",
-                    color: colors.textGray,
-                    fontSize: "15px",
-                    boxSizing: "border-box",
-                    opacity: 0.6,
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  padding: "15px",
-                  background:
-                    "linear-gradient(135deg, rgba(163, 80, 255, 0.1) 0%, rgba(57, 255, 20, 0.1) 100%)",
-                  borderRadius: "10px",
-                  color: colors.neonGreen,
-                  fontSize: "14px",
-                  textAlign: "center",
-                  fontWeight: "600",
-                  marginBottom: "20px",
-                }}
-              >
-                🎉 Member Since: {memberSince}
-              </div>
-
-              <button
-                onClick={handleSaveProfile}
-                style={{
-                  width: "100%",
-                  padding: "14px",
-                  background:
-                    "linear-gradient(135deg, #39ff14 0%, #2ecc71 100%)",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontWeight: "700",
-                  fontSize: "15px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 5px 20px rgba(57, 255, 20, 0.3)",
-                }}
-                onMouseEnter={(e) =>
-                  (e.target.style.transform = "translateY(-2px)")
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.transform = "translateY(0)")
-                }
-              >
-                💾 Save Changes
-              </button>
-            </div>
-
-            {/* Enhanced Statistics Card */}
-            <div
-              style={{
-                backgroundColor: "rgba(30, 30, 53, 0.8)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "20px",
-                padding: "35px",
-                border: "1px solid rgba(163, 80, 255, 0.2)",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-              }}
-            >
-              <h2
-                style={{
-                  color: colors.textLight,
-                  fontSize: "22px",
-                  fontWeight: "700",
-                  marginBottom: "25px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <FiActivity size={24} color={colors.neonGreen} /> Your
-                Statistics
-              </h2>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "15px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "20px",
-                    background:
-                      "linear-gradient(135deg, rgba(163, 80, 255, 0.15) 0%, rgba(163, 80, 255, 0.05) 100%)",
-                    borderRadius: "12px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    border: "1px solid rgba(163, 80, 255, 0.2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                    }}
-                  >
-                    <FiActivity size={20} color={colors.accentPurple} />
-                    <span
-                      style={{
-                        color: colors.textLight,
-                        fontSize: "15px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Total Emotion Scans
-                    </span>
+              <div className="pf-card-body">
+                <div className="pf-grid-2">
+                  <div className="pf-field">
+                    <label className="pf-label">Full name</label>
+                    <input
+                      className="pf-input"
+                      type="text"
+                      value={name}
+                      onChange={(e) =>
+                        setUserData({ ...userData, name: e.target.value })
+                      }
+                    />
                   </div>
-                  <span
-                    style={{
-                      color: colors.neonGreen,
-                      fontSize: "24px",
-                      fontWeight: "900",
-                    }}
-                  >
-                    {stats.totalScans}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    padding: "20px",
-                    background:
-                      "linear-gradient(135deg, rgba(57, 255, 20, 0.15) 0%, rgba(57, 255, 20, 0.05) 100%)",
-                    borderRadius: "12px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    border: "1px solid rgba(57, 255, 20, 0.2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                    }}
-                  >
-                    <FiMusic size={20} color={colors.neonGreen} />
-                    <span
-                      style={{
-                        color: colors.textLight,
-                        fontSize: "15px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Songs Played
-                    </span>
-                  </div>
-                  <span
-                    style={{
-                      color: colors.neonGreen,
-                      fontSize: "24px",
-                      fontWeight: "900",
-                    }}
-                  >
-                    {stats.songsPlayed}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    padding: "20px",
-                    background:
-                      "linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(255, 107, 107, 0.05) 100%)",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(255, 107, 107, 0.2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "12px",
-                    }}
-                  >
-                    <FiTrendingUp size={20} color={colors.coralRed} />
-                    <span
-                      style={{
-                        color: colors.textLight,
-                        fontSize: "15px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Most Detected Emotion
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span style={{ fontSize: "36px" }}>
-                      {emotionEmojis[stats.mostDetectedEmotion]}
-                    </span>
-                    <span
-                      style={{
-                        color: colors.neonGreen,
-                        fontSize: "20px",
-                        fontWeight: "900",
-                      }}
-                    >
-                      {stats.mostDetectedEmotion}
-                    </span>
+                  <div className="pf-field">
+                    <label className="pf-label">Email address</label>
+                    <input
+                      className="pf-input"
+                      type="email"
+                      value={email}
+                      disabled
+                    />
                   </div>
                 </div>
 
-                {/* Top 3 Emotions */}
-                {getTopEmotions().length > 0 && (
-                  <div
-                    style={{
-                      padding: "20px",
-                      backgroundColor: colors.inputCardBgVisible,
-                      borderRadius: "12px",
-                      border: "1px solid rgba(163, 80, 255, 0.2)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: colors.textGray,
-                        fontSize: "13px",
-                        marginBottom: "12px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      🏆 Top Detected Emotions
-                    </div>
-                    {getTopEmotions().map(([emotion, count], idx) => (
-                      <div
-                        key={emotion}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "8px 0",
-                          borderBottom:
-                            idx < getTopEmotions().length - 1
-                              ? "1px solid rgba(163, 80, 255, 0.1)"
-                              : "none",
-                        }}
-                      >
-                        <span
-                          style={{ color: colors.textLight, fontSize: "14px" }}
-                        >
-                          {emotionEmojis[emotion]} {emotion}
-                        </span>
-                        <span
-                          style={{
-                            color: colors.neonGreen,
-                            fontWeight: "700",
-                            fontSize: "14px",
-                          }}
-                        >
-                          {count}x
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Reset Stats Button */}
-                <button
-                  onClick={resetStats}
-                  style={{
-                    padding: "10px",
-                    backgroundColor: colors.coralRed,
-                    color: colors.textLight,
-                    border: "none",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    transition: "opacity 0.2s",
-                    marginTop: "10px",
-                  }}
-                  onMouseEnter={(e) => (e.target.style.opacity = 0.8)}
-                  onMouseLeave={(e) => (e.target.style.opacity = 1)}
-                >
-                  Reset All Statistics
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "30px" }}
-          >
-            {/* Music Preferences */}
-            <div
-              style={{
-                backgroundColor: "rgba(30, 30, 53, 0.8)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "20px",
-                padding: "35px",
-                border: "1px solid rgba(163, 80, 255, 0.2)",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "25px",
-                }}
-              >
-                <h2
-                  style={{
-                    color: colors.textLight,
-                    fontSize: "22px",
-                    fontWeight: "700",
-                    margin: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
-                  🎵 Music Preferences
-                </h2>
-                <button
-                  onClick={() => setIsEditingLanguages(!isEditingLanguages)}
-                  style={{
-                    padding: "8px 18px",
-                    background: isEditingLanguages
-                      ? "linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%)"
-                      : "linear-gradient(135deg, #a350ff 0%, #d957ff 100%)",
-                    color: colors.textLight,
-                    border: "none",
-                    borderRadius: "20px",
-                    fontWeight: "700",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    boxShadow: "0 5px 15px rgba(163, 80, 255, 0.3)",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.target.style.transform = "translateY(-2px)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.target.style.transform = "translateY(0)")
-                  }
-                >
-                  {isEditingLanguages ? "❌ Cancel" : "✏ Edit"}
-                </button>
-              </div>
-
-              {isEditingLanguages ? (
-                <div>
-                  <p
-                    style={{
-                      color: colors.textGray,
-                      fontSize: "14px",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    Select up to 5 languages for personalized recommendations
-                  </p>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(2, 1fr)",
-                      gap: "12px",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    {allLanguages.map((lang) => (
-                      <div
-                        key={lang}
-                        onClick={() => handleLanguageToggle(lang)}
-                        style={{
-                          padding: "12px",
-                          borderRadius: "12px",
-                          backgroundColor: selectedLanguages.includes(lang)
-                            ? colors.accentPurple
-                            : colors.inputCardBgVisible,
-                          border: selectedLanguages.includes(lang)
-                            ? `2px solid ${colors.neonGreen}`
-                            : "2px solid transparent",
-                          color: colors.textLight,
-                          cursor: "pointer",
-                          fontSize: "14px",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          transition: "all 0.3s ease",
-                          boxShadow: selectedLanguages.includes(lang)
-                            ? "0 0 20px rgba(57, 255, 20, 0.3)"
-                            : "none",
-                        }}
-                      >
-                        {lang} {selectedLanguages.includes(lang) && "✓"}
-                      </div>
-                    ))}
-                  </div>
+                <div className="pf-actions-row" style={{ marginTop: "8px" }}>
                   <button
-                    onClick={handleSaveLanguages}
-                    style={{
-                      width: "100%",
-                      padding: "14px",
-                      background:
-                        "linear-gradient(135deg, #39ff14 0%, #2ecc71 100%)",
-                      color: "#000",
-                      border: "none",
-                      borderRadius: "12px",
-                      fontWeight: "700",
-                      cursor: "pointer",
-                      fontSize: "15px",
-                      boxShadow: "0 5px 20px rgba(57, 255, 20, 0.3)",
-                      transition: "all 0.3s ease",
-                    }}
+                    className="pf-btn-primary"
+                    onClick={handleSaveProfile}
                   >
-                    💾 Save Languages
+                    Save changes
                   </button>
                 </div>
-              ) : (
-                <div
-                  style={{
-                    padding: "20px",
-                    background:
-                      "linear-gradient(135deg, rgba(163, 80, 255, 0.1) 0%, rgba(57, 255, 20, 0.1) 100%)",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(163, 80, 255, 0.2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      color: colors.textGray,
-                      fontSize: "13px",
-                      marginBottom: "10px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Selected Languages ({selectedLanguages.length}/5)
-                  </div>
-                  <div
-                    style={{
-                      color: colors.neonGreen,
-                      fontSize: "16px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {selectedLanguages.length > 0
-                      ? selectedLanguages.join(", ")
-                      : "No languages selected"}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
+          )}
 
-            {/* Favorite Songs with Play & Remove */}
-            <div
-              style={{
-                backgroundColor: "rgba(30, 30, 53, 0.8)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "20px",
-                padding: "35px",
-                border: "1px solid rgba(163, 80, 255, 0.2)",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-                maxHeight: "600px",
-                overflowY: "auto",
-              }}
-            >
-              <h2
-                style={{
-                  color: colors.textLight,
-                  fontSize: "22px",
-                  fontWeight: "700",
-                  marginBottom: "25px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <FiHeart size={24} color={colors.coralRed} /> Favorite Songs
-              </h2>
-
-              {stats.favoriteSongs && stats.favoriteSongs.length > 0 ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  {stats.favoriteSongs.map((song, idx) => (
+          {/* ===== STATS TAB ===== */}
+          {activeTab === "stats" && (
+            <>
+              <div className="pf-card">
+                <div className="pf-card-body">
+                  <p className="pf-section-label">Overview</p>
+                  <div className="pf-stat-row">
+                    <div className="pf-stat-label">
+                      <div className="pf-stat-icon">
+                        <FiActivity size={14} />
+                      </div>
+                      Emotion scans
+                    </div>
+                    <div className="pf-stat-value">{stats.totalScans}</div>
+                  </div>
+                  <div className="pf-stat-row">
+                    <div className="pf-stat-label">
+                      <div className="pf-stat-icon">
+                        <FiMusic size={14} />
+                      </div>
+                      Songs played
+                    </div>
+                    <div className="pf-stat-value">{stats.songsPlayed}</div>
+                  </div>
+                  <div className="pf-stat-row">
+                    <div className="pf-stat-label">
+                      <div className="pf-stat-icon">
+                        <FiTrendingUp size={14} />
+                      </div>
+                      Most detected mood
+                    </div>
                     <div
-                      key={idx}
                       style={{
-                        padding: "15px",
-                        backgroundColor: colors.inputCardBgVisible,
-                        borderRadius: "10px",
                         display: "flex",
                         alignItems: "center",
-                        gap: "12px",
-                        border:
-                          playingSongId === song.id
-                            ? `2px solid ${colors.neonGreen}`
-                            : "1px solid rgba(163, 80, 255, 0.2)",
-                        transition: "all 0.3s ease",
+                        gap: "8px",
                       }}
                     >
-                      {song.image_url ? (
-                        <img
-                          src={song.image_url}
-                          alt={song.title}
-                          style={{
-                            width: "60px",
-                            height: "60px",
-                            borderRadius: "8px",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: "60px",
-                            height: "60px",
-                            borderRadius: "8px",
-                            background:
-                              "linear-gradient(135deg, rgba(163, 80, 255, 0.3) 0%, rgba(163, 80, 255, 0.1) 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "24px",
-                          }}
+                      <span style={{ fontSize: "22px" }}>
+                        {emotionEmojis[stats.mostDetectedEmotion]}
+                      </span>
+                      <span
+                        className="pf-stat-value"
+                        style={{ fontSize: "16px" }}
+                      >
+                        {stats.mostDetectedEmotion}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {getTopEmotions().length > 0 && (
+                <div className="pf-card">
+                  <div className="pf-card-body">
+                    <p className="pf-section-label">Emotion breakdown</p>
+                    {(() => {
+                      const max = Math.max(
+                        ...getTopEmotions().map(([, c]) => c),
+                      );
+                      return getTopEmotions().map(([emotion, count]) => (
+                        <div key={emotion} className="pf-emotion-bar-row">
+                          <div className="pf-emotion-bar-meta">
+                            <span className="pf-emotion-bar-label">
+                              {emotionEmojis[emotion]} {emotion}
+                            </span>
+                            <span className="pf-emotion-bar-count">
+                              {count}×
+                            </span>
+                          </div>
+                          <div className="pf-emotion-bar-track">
+                            <div
+                              className="pf-emotion-bar-fill"
+                              style={{ width: `${(count / max) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              <div className="pf-card">
+                <div className="pf-card-body">
+                  <p className="pf-section-label">Data management</p>
+                  <button className="pf-btn-danger" onClick={resetStats}>
+                    Reset all statistics
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ===== MUSIC TAB ===== */}
+          {activeTab === "music" && (
+            <>
+              <div className="pf-card">
+                <div className="pf-card-header">
+                  <span className="pf-card-title">Language preferences</span>
+                  <button
+                    className={
+                      isEditingLanguages ? "pf-btn-danger" : "pf-btn-secondary"
+                    }
+                    style={{ padding: "7px 14px", fontSize: "10px" }}
+                    onClick={() => setIsEditingLanguages((v) => !v)}
+                  >
+                    {isEditingLanguages ? "Cancel" : "Edit"}
+                  </button>
+                </div>
+                <div className="pf-card-body">
+                  {isEditingLanguages ? (
+                    <>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "rgba(180,170,210,0.45)",
+                          marginBottom: "16px",
+                          letterSpacing: "0.3px",
+                        }}
+                      >
+                        Select up to 5 languages · {selectedLanguages.length}/5
+                        selected
+                      </p>
+                      <div
+                        className="pf-lang-grid"
+                        style={{ marginBottom: "20px" }}
+                      >
+                        {allLanguages.map((lang) => (
+                          <div
+                            key={lang}
+                            className={`pf-lang-chip ${selectedLanguages.includes(lang) ? "selected" : ""}`}
+                            onClick={() => handleLanguageToggle(lang)}
+                          >
+                            {lang} {selectedLanguages.includes(lang) && "✓"}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pf-actions-row">
+                        <button
+                          className="pf-btn-primary"
+                          onClick={handleSaveLanguages}
                         >
-                          🎵
+                          Save languages
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="pf-label">
+                        Active languages ({selectedLanguages.length}/5)
+                      </p>
+                      {selectedLanguages.length > 0 ? (
+                        <div className="pf-lang-display">
+                          {selectedLanguages.join("  ·  ")}
+                        </div>
+                      ) : (
+                        <div className="pf-lang-none">
+                          No languages selected
                         </div>
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            color: colors.textLight,
-                            fontWeight: "700",
-                            fontSize: "14px",
-                            marginBottom: "3px",
-                          }}
-                        >
-                          {song.title}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="pf-card">
+                <div className="pf-card-header">
+                  <span className="pf-card-title">Saved songs</span>
+                  <span className="pf-inline-badge">
+                    <FiHeart size={10} /> {stats.favoriteSongs?.length || 0}
+                  </span>
+                </div>
+                <div className="pf-card-body">
+                  {stats.favoriteSongs && stats.favoriteSongs.length > 0 ? (
+                    stats.favoriteSongs.map((song, idx) => (
+                      <div key={idx} className="pf-song-row">
+                        <div className="pf-song-thumb">
+                          {song.image_url ? (
+                            <img src={song.image_url} alt={song.title} />
+                          ) : (
+                            "♪"
+                          )}
                         </div>
-                        <div
-                          style={{
-                            color: colors.textGray,
-                            fontSize: "12px",
-                            marginBottom: "3px",
-                          }}
-                        >
-                          {song.artist}
+                        <div className="pf-song-info">
+                          <div className="pf-song-title">{song.title}</div>
+                          <div className="pf-song-artist">{song.artist}</div>
                         </div>
                         {song.language && (
-                          <div
-                            style={{
-                              color: colors.neonGreen,
-                              fontSize: "11px",
-                              fontWeight: "600",
-                            }}
-                          >
+                          <span className="pf-inline-badge">
                             {song.language}
-                          </div>
+                          </span>
                         )}
+                        <div className="pf-song-actions">
+                          <button
+                            className="pf-song-btn"
+                            onClick={() => setPlayingSongId(song.id)}
+                          >
+                            <FiPlay size={11} />
+                          </button>
+                          <button
+                            className="pf-song-btn remove"
+                            onClick={() => handleRemoveFavorite(song.id)}
+                          >
+                            <FiTrash2 size={11} />
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handlePlaySong(song.id)}
-                        style={{
-                          background: colors.accentPurple,
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "35px",
-                          height: "35px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          transition: "background 0.2s",
-                          boxShadow: "0 4px 15px rgba(163, 80, 255, 0.4)",
-                        }}
-                      >
-                        <FiPlay size={18} color={colors.textLight} />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveFavorite(song.id)}
-                        style={{
-                          background: colors.coralRed,
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "35px",
-                          height: "35px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          transition: "background 0.2s",
-                          boxShadow: "0 4px 15px rgba(255, 107, 107, 0.4)",
-                        }}
-                      >
-                        <FiTrash2 size={18} color={colors.textLight} />
-                      </button>
+                    ))
+                  ) : (
+                    <div className="pf-empty">
+                      <div className="pf-empty-icon">♡</div>
+                      <p className="pf-empty-text">No saved songs yet</p>
                     </div>
-                  ))}
+                  )}
                 </div>
-              ) : (
-                <p
-                  style={{
-                    color: colors.textGray,
-                    textAlign: "center",
-                    padding: "20px",
-                  }}
-                >
-                  No favorite songs yet. Start adding some tracks! ❤️
-                </p>
-              )}
-            </div>
+              </div>
+            </>
+          )}
 
-            {/* Account Settings */}
-            <div
-              style={{
-                backgroundColor: "rgba(30, 30, 53, 0.8)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "20px",
-                padding: "35px",
-                border: "1px solid rgba(163, 80, 255, 0.2)",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-              }}
-            >
-              <h2
-                style={{
-                  color: colors.textLight,
-                  fontSize: "22px",
-                  fontWeight: "700",
-                  marginBottom: "25px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                ⚙️ App Settings
-              </h2>
+          {/* ===== SETTINGS TAB ===== */}
+          {activeTab === "settings" && (
+            <>
+              <div className="pf-card">
+                <div className="pf-card-body">
+                  <p className="pf-section-label">Playback</p>
 
-              {/* AutoPlay Toggle */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "15px",
-                  padding: "15px 0",
-                  borderBottom: `1px solid ${colors.inputCardBgVisible}`,
-                }}
-              >
-                <span style={{ color: colors.textLight, fontWeight: "600" }}>
-                  Auto-Play Next Song
-                </span>
-                <label
-                  style={{
-                    position: "relative",
-                    display: "inline-block",
-                    width: "50px",
-                    height: "28px",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={settings.autoPlay}
-                    onChange={() => handleSettingToggle("autoPlay")}
-                    style={{ opacity: 0, width: 0, height: 0 }}
-                  />
-                  <span
-                    style={{
-                      position: "absolute",
-                      cursor: "pointer",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: settings.autoPlay
-                        ? colors.neonGreen
-                        : colors.textGray,
-                      transition: ".4s",
-                      borderRadius: "28px",
-                      boxShadow: settings.autoPlay
-                        ? `0 0 10px ${colors.neonGreen}`
-                        : "none",
-                    }}
+                  <div className="pf-toggle-row">
+                    <div>
+                      <div className="pf-toggle-label">Auto-play next song</div>
+                      <div className="pf-toggle-sub">
+                        Automatically queue next recommendation
+                      </div>
+                    </div>
+                    <div
+                      className={`pf-toggle-switch ${settings.autoPlay ? "on" : ""}`}
+                      onClick={() => handleSettingToggle("autoPlay")}
+                    >
+                      <div className="pf-toggle-thumb" />
+                    </div>
+                  </div>
+
+                  <div
+                    className="pf-toggle-row"
+                    style={{ borderBottom: "none" }}
                   >
-                    <span
-                      style={{
-                        position: "absolute",
-                        content: '""',
-                        height: "20px",
-                        width: "20px",
-                        left: "4px",
-                        bottom: "4px",
-                        backgroundColor: colors.darkBg,
-                        transition: ".4s",
-                        borderRadius: "50%",
-                        transform: settings.autoPlay
-                          ? "translateX(22px)"
-                          : "translateX(0)",
-                      }}
-                    ></span>
-                  </span>
-                </label>
+                    <div>
+                      <div className="pf-toggle-label">Default emotion</div>
+                      <div className="pf-toggle-sub">
+                        Fallback mood for recommendations
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pf-field" style={{ marginTop: "10px" }}>
+                    <select
+                      className="pf-select"
+                      value={settings.defaultEmotion}
+                      onChange={(e) =>
+                        updateUserProfileData({
+                          settings: {
+                            ...settings,
+                            defaultEmotion: e.target.value,
+                          },
+                        })
+                      }
+                    >
+                      {Object.keys(emotionEmojis).map((emotion) => (
+                        <option key={emotion} value={emotion}>
+                          {emotionEmojis[emotion]} {emotion}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              {/* Default Emotion Select */}
-              <div style={{ marginBottom: "25px", padding: "15px 0" }}>
-                <label
-                  style={{
-                    color: colors.textGray,
-                    fontSize: "12px",
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Default Emotion Scan
-                </label>
-                <select
-                  value={settings.defaultEmotion}
-                  onChange={(e) =>
-                    updateUserProfileData({
-                      settings: { ...settings, defaultEmotion: e.target.value },
-                    })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    backgroundColor: colors.inputCardBgVisible,
-                    border: `2px solid ${colors.accentPurple}`,
-                    borderRadius: "10px",
-                    color: colors.textLight,
-                    fontSize: "15px",
-                    boxSizing: "border-box",
-                    outline: "none",
-                  }}
-                >
-                  {Object.keys(emotionEmojis).map((emotion) => (
-                    <option key={emotion} value={emotion}>
-                      {emotionEmojis[emotion]} {emotion}
-                    </option>
-                  ))}
-                </select>
+              <div className="pf-card">
+                <div className="pf-card-body">
+                  <p className="pf-section-label">Account</p>
+                  <div className="pf-actions-row">
+                    <button className="pf-btn-secondary" onClick={handleLogout}>
+                      Sign out
+                    </button>
+                    <button
+                      className="pf-btn-danger"
+                      onClick={handleDeleteAccount}
+                    >
+                      Delete account
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              {/* Logout and Delete */}
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: "100%",
-                  padding: "14px",
-                  background: colors.textGray,
-                  color: colors.darkBg,
-                  border: "none",
-                  borderRadius: "12px",
-                  fontWeight: "700",
-                  fontSize: "15px",
-                  cursor: "pointer",
-                  transition: "background 0.3s ease",
-                  marginBottom: "15px",
-                }}
-              >
-                🚪 Logout
-              </button>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
