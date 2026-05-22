@@ -1,187 +1,33 @@
 // src/pages/LanguageSelection.jsx
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiCheckCircle } from "react-icons/fi";
-
-const styles = {
-  color: {
-    darkBg: "#0f0f1c",
-    cardBg: "#1e1e35",
-    accentPurple: "#a350ff",
-    textLight: "#f0f0f0",
-    textGray: "#b0b0c2",
-    successGreen: "#39ff14",
-  },
-  container: {
-    minHeight: "calc(100vh - 70px)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#0f0f1c",
-    padding: "20px",
-  },
-  selectionBox: {
-    backgroundColor: "#1e1e35",
-    padding: "40px 60px",
-    borderRadius: "20px",
-    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.5)",
-    width: "100%",
-    maxWidth: "850px",
-    border: "1px solid rgba(255, 255, 255, 0.05)",
-  },
-  title: {
-    textAlign: "center",
-    color: "#a350ff",
-    marginBottom: "10px",
-    fontSize: "36px",
-    fontWeight: "800",
-    textShadow: "0 0 10px rgba(163, 80, 255, 0.4)",
-  },
-  subtitle: {
-    textAlign: "center",
-    color: "#b0b0c2",
-    marginBottom: "30px",
-    fontSize: "18px",
-  },
-  languageGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "20px",
-    marginBottom: "30px",
-  },
-  languageItem: (isSelected) => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "15px 25px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    border: isSelected ? "2px solid #39ff14" : "2px solid transparent",
-    backgroundColor: isSelected ? "#2a2a4f" : "#1e1e35",
-    color: isSelected ? "#39ff14" : "#f0f0f0",
-    boxShadow: isSelected
-      ? "0 0 15px rgba(57, 255, 20, 0.5)"
-      : "0 4px 10px rgba(0, 0, 0, 0.3)",
-    transition: "all 0.3s ease",
-    fontWeight: "600",
-    fontSize: "18px",
-    transform: isSelected ? "scale(1.02)" : "scale(1)",
-
-    ...(isSelected
-      ? {}
-      : {
-          ":hover": {
-            backgroundColor: "#252540",
-            boxShadow: "0 4px 20px rgba(163, 80, 255, 0.3)", // Subtle hover glow
-          },
-        }),
-  }),
-
-  checkIcon: {
-    color: "#39ff14",
-    fontSize: "24px",
-  },
-
-  button: (isDisabled) => ({
-    width: "100%",
-    padding: "15px",
-    borderRadius: "10px",
-    border: "none",
-    backgroundColor: isDisabled ? "#5a5a70" : "#a350ff",
-    color: "white",
-    fontSize: "18px",
-    fontWeight: "700",
-    cursor: isDisabled ? "not-allowed" : "pointer",
-    marginTop: "20px",
-    opacity: isDisabled ? 0.6 : 1,
-    transition: "all 0.3s ease",
-    boxShadow: isDisabled ? "none" : "0 5px 20px rgba(163, 80, 255, 0.5)",
-
-    ...(!isDisabled && {
-      ":hover": {
-        backgroundColor: "#b571ff",
-        boxShadow: "0 5px 25px rgba(181, 113, 255, 0.7)",
-      },
-    }),
-  }),
-};
 
 const allLanguages = [
-  "Hindi",
-  "English",
-  "Marathi",
-  "Telugu",
-  "Tamil",
-  "Gujarati",
-  "Urdu",
-  "Kannada",
-  "Bengali",
-  "Malayalam",
+  { name: "Hindi", script: "हिंदी" },
+  { name: "English", script: "English" },
+  { name: "Marathi", script: "मराठी" },
+  { name: "Telugu", script: "తెలుగు" },
+  { name: "Tamil", script: "தமிழ்" },
+  { name: "Gujarati", script: "ગુજરાતી" },
+  { name: "Urdu", script: "اردو" },
+  { name: "Kannada", script: "ಕನ್ನಡ" },
+  { name: "Bengali", script: "বাংলা" },
+  { name: "Malayalam", script: "മലയാളം" },
 ];
-
-const floatingEmojis = [
-  "🎵",
-  "🎶",
-  "🎤",
-  "🎧",
-  "🎸",
-  "🎹",
-  "🥁",
-  "🎺",
-  "🎻",
-  "🎼",
-  "😊",
-  "😢",
-  "😠",
-  "😮",
-  "😐",
-  "🤢",
-  "😨",
-  "💜",
-  "💚",
-  "💙",
-  "❤️",
-  "🌟",
-  "✨",
-  "🎭",
-  "🎪",
-];
-
-// Component for floating emojis
-function FloatingEmoji({ emoji, delay, duration, startX, endX, startY }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${startX}%`,
-        top: `${startY}%`,
-        fontSize: "44px",
-        opacity: "0.55",
-        animation: `float ${duration}s ease-in-out ${delay}s infinite`,
-        pointerEvents: "none",
-        zIndex: 0,
-        dropshadow: "#a350ff",
-      }}
-    >
-      {emoji}
-    </div>
-  );
-}
 
 const LanguageSelection = () => {
   const navigate = useNavigate();
   const [selectedLanguages, setSelectedLanguages] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleLanguage = (language) => {
     setSelectedLanguages((prev) => {
-      if (prev.includes(language)) {
-        // Deselect language
-        return prev.filter((lang) => lang !== language);
-      } else if (prev.length < 5) {
-        return [...prev, language];
-      }
+      if (prev.includes(language)) return prev.filter((l) => l !== language);
+      if (prev.length < 5) return [...prev, language];
       return prev;
     });
   };
@@ -190,360 +36,321 @@ const LanguageSelection = () => {
     if (selectedLanguages.length > 0) {
       localStorage.setItem("user_languages", JSON.stringify(selectedLanguages));
       localStorage.setItem("languages_set", "true");
-
       navigate("/main");
     }
   };
 
-  const isProceedDisabled = selectedLanguages.length === 0;
-
   return (
-    <div style={styles.container}>
-      {/* Add CSS keyframes for floating animation */}
-      {/* <style>
-        {`
-          @keyframes float {
-            0%, 100% {
-              transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            25% {
-              transform: translateY(-20px) translateX(20px) rotate(5deg);
-            }
-            50% {
-              transform: translateY(-40px) translateX(-20px) rotate(-5deg);
-            }
-            75% {
-              transform: translateY(-20px) translateX(10px) rotate(3deg);
-            }
-          }
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Mono:wght@300;400;500&display=swap');
 
-        `}
-      </style> */}
+        .etl-page {
+          min-height: calc(100vh - 70px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #080810;
+          padding: 40px 20px;
+          position: relative;
+          overflow: hidden;
+          font-family: 'DM Mono', monospace;
+        }
 
-      {/* Floating Emojis Background */}
-      {/* {floatingEmojis.map((emoji, index) => (
-        <FloatingEmoji
-          key={index}
-          emoji={emoji}
-          delay={index * 0.5}
-          duration={8 + (index % 5)}
-          startX={Math.random() * 100}
-          endX={Math.random() * 100}
-          startY={Math.random() * 100}
-        />
-      ))} */}
-      <div style={styles.selectionBox}>
-        <h2 style={styles.title}>Select Your Languages</h2>
-        <p style={styles.subtitle}>
-          Your soundtrack begins here. Choose up to 5 languages to unlock
-          personalized music recommendations
-        </p>
+        .etl-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(90px);
+          pointer-events: none;
+          animation: etlPulse 9s ease-in-out infinite alternate;
+        }
+        .etl-orb-1 { width: 600px; height: 600px; top: -200px; left: -200px; background: radial-gradient(circle, rgba(99,60,180,0.28) 0%, transparent 70%); }
+        .etl-orb-2 { width: 450px; height: 450px; bottom: -150px; right: -150px; background: radial-gradient(circle, rgba(180,60,140,0.22) 0%, transparent 70%); animation-delay: -4s; }
+        @keyframes etlPulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.15) translate(15px, -15px); opacity: 1; } }
 
-        <div style={styles.languageGrid}>
-          {allLanguages.map((lang) => {
-            const isSelected = selectedLanguages.includes(lang);
-            return (
-              <div
-                key={lang}
-                style={styles.languageItem(isSelected)}
-                onClick={() => toggleLanguage(lang)}
-              >
-                <span>{lang}</span>
-                {isSelected && <FiCheckCircle style={styles.checkIcon} />}
+        .etl-noise { position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events: none; opacity: 0.4; }
+
+        .etl-container {
+          position: relative;
+          z-index: 10;
+          width: 100%;
+          max-width: 760px;
+          opacity: 0;
+          transform: translateY(24px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .etl-container.mounted { opacity: 1; transform: translateY(0); }
+
+        .etl-header {
+          text-align: center;
+          margin-bottom: 48px;
+        }
+
+        .etl-eyebrow {
+          font-size: 10px;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          color: rgba(155,109,255,0.7);
+          margin-bottom: 12px;
+          display: block;
+        }
+
+        .etl-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 46px;
+          font-weight: 300;
+          color: #f0eef8;
+          letter-spacing: 1px;
+          margin: 0 0 12px;
+          line-height: 1.1;
+        }
+
+        .etl-subtitle {
+          font-size: 12px;
+          color: rgba(180,170,210,0.5);
+          letter-spacing: 1px;
+          line-height: 1.8;
+        }
+
+        .etl-counter {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(155,109,255,0.08);
+          border: 1px solid rgba(155,109,255,0.2);
+          border-radius: 30px;
+          padding: 6px 16px;
+          margin-top: 16px;
+          font-size: 11px;
+          color: rgba(155,109,255,0.8);
+          letter-spacing: 1px;
+        }
+
+        .etl-counter-dots {
+          display: flex;
+          gap: 4px;
+          align-items: center;
+        }
+
+        .etl-counter-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: rgba(155,109,255,0.25);
+          transition: background 0.3s, transform 0.3s;
+        }
+
+        .etl-counter-dot.filled {
+          background: linear-gradient(135deg, #9b6dff, #e060c0);
+          transform: scale(1.2);
+          box-shadow: 0 0 8px rgba(155,109,255,0.6);
+        }
+
+        .etl-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-bottom: 32px;
+        }
+
+        @media (min-width: 560px) {
+          .etl-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        }
+
+        .etl-lang-item {
+          background: rgba(14, 14, 28, 0.7);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 14px;
+          padding: 18px 20px;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .etl-lang-item::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(124,77,255,0.08), rgba(192,96,208,0.04));
+          opacity: 0;
+          transition: opacity 0.25s;
+        }
+
+        .etl-lang-item:hover {
+          border-color: rgba(155,109,255,0.3);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .etl-lang-item:hover::before { opacity: 1; }
+
+        .etl-lang-item.selected {
+          border-color: rgba(155,109,255,0.6);
+          background: rgba(124,77,255,0.12);
+          transform: translateY(-2px);
+          box-shadow: 0 0 0 1px rgba(155,109,255,0.2), 0 8px 32px rgba(124,77,255,0.2);
+        }
+
+        .etl-lang-item.selected::before { opacity: 1; }
+
+        .etl-lang-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: #f0eef8;
+          letter-spacing: 0.5px;
+          transition: color 0.25s;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .etl-lang-item.selected .etl-lang-name { color: #c8a8ff; }
+
+        .etl-lang-script {
+          font-size: 16px;
+          color: rgba(180,170,210,0.4);
+          transition: color 0.25s;
+          font-family: 'Cormorant Garamond', serif;
+        }
+
+        .etl-lang-item.selected .etl-lang-script { color: rgba(155,109,255,0.6); }
+
+        .etl-check {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #7c4dff, #c060d0);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          color: #fff;
+          flex-shrink: 0;
+          box-shadow: 0 0 10px rgba(124,77,255,0.5);
+          animation: checkPop 0.2s ease;
+        }
+
+        @keyframes checkPop {
+          0% { transform: scale(0); }
+          70% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+
+        .etl-actions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .etl-btn-proceed {
+          width: 100%;
+          padding: 16px;
+          background: linear-gradient(135deg, #7c4dff 0%, #c060d0 100%);
+          border: none;
+          border-radius: 14px;
+          color: #fff;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 2.5px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+          box-shadow: 0 8px 28px rgba(124,77,255,0.35);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .etl-btn-proceed::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .etl-btn-proceed:hover::before { opacity: 1; }
+        .etl-btn-proceed:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(124,77,255,0.45); }
+        .etl-btn-proceed:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .etl-max-note {
+          font-size: 10px;
+          color: rgba(155,109,255,0.7);
+          letter-spacing: 1px;
+          text-align: center;
+        }
+      `}</style>
+
+      <div className="etl-page">
+        <div className="etl-orb etl-orb-1" />
+        <div className="etl-orb etl-orb-2" />
+        <div className="etl-noise" />
+
+        <div className={`etl-container ${mounted ? "mounted" : ""}`}>
+          <div className="etl-header">
+            <span className="etl-eyebrow">Personalization</span>
+            <h1 className="etl-title">Choose your languages</h1>
+            <p className="etl-subtitle">
+              Select up to 5 languages to shape your sonic experience
+            </p>
+            <div className="etl-counter">
+              <div className="etl-counter-dots">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className={`etl-counter-dot ${i < selectedLanguages.length ? "filled" : ""}`}
+                  />
+                ))}
               </div>
-            );
-          })}
-        </div>
+              <span>{selectedLanguages.length} / 5 selected</span>
+            </div>
+          </div>
 
-        <button
-          style={styles.button(isProceedDisabled)}
-          onClick={handleProceed}
-          disabled={isProceedDisabled}
-        >
-          Proceed to Dashboard ({selectedLanguages.length} / 5 selected)
-        </button>
-        {selectedLanguages.length === 5 && (
-          <p
-            style={{
-              textAlign: "center",
-              color: styles.color.successGreen,
-              marginTop: "10px",
-              fontWeight: "600",
-            }}
-          >
-            Maximum languages selected!
-          </p>
-        )}
+          <div className="etl-grid">
+            {allLanguages.map((lang) => {
+              const isSelected = selectedLanguages.includes(lang.name);
+              return (
+                <div
+                  key={lang.name}
+                  className={`etl-lang-item ${isSelected ? "selected" : ""}`}
+                  onClick={() => toggleLanguage(lang.name)}
+                >
+                  <div className="etl-lang-name">
+                    <span>{lang.name}</span>
+                    {isSelected && <div className="etl-check">✓</div>}
+                  </div>
+                  <div className="etl-lang-script">{lang.script}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="etl-actions">
+            <button
+              className="etl-btn-proceed"
+              onClick={handleProceed}
+              disabled={selectedLanguages.length === 0}
+            >
+              {selectedLanguages.length === 0
+                ? "Select at least one language"
+                : `Continue with ${selectedLanguages.length} language${selectedLanguages.length > 1 ? "s" : ""}`}
+            </button>
+            {selectedLanguages.length === 5 && (
+              <p className="etl-max-note">Maximum selection reached</p>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
 export default LanguageSelection;
-
-// // src/pages/LanguageSelection.jsx
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { FiCheckCircle } from "react-icons/fi";
-// import { updateUserProfileData } from "../utils/statsTracker";
-// import { getCurrentUser } from "../utils/authService";
-// import { doc, getDoc } from "firebase/firestore";
-// import { db } from "../utils/firebaseConfig";
-
-// const styles = {
-//   color: {
-//     darkBg: "#0f0f1c",
-//     cardBg: "#1e1e35",
-//     accentPurple: "#a350ff",
-//     textLight: "#f0f0f0",
-//     textGray: "#b0b0c2",
-//     successGreen: "#39ff14",
-//   },
-//   container: {
-//     minHeight: "calc(100vh - 70px)",
-//     display: "flex",
-//     flexDirection: "column",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     backgroundColor: "#0f0f1c",
-//     padding: "20px",
-//   },
-//   selectionBox: {
-//     backgroundColor: "#1e1e35",
-//     padding: "40px 60px",
-//     borderRadius: "20px",
-//     boxShadow: "0 15px 40px rgba(0, 0, 0, 0.5)",
-//     width: "100%",
-//     maxWidth: "850px",
-//     border: "1px solid rgba(255, 255, 255, 0.05)",
-//   },
-//   title: {
-//     textAlign: "center",
-//     color: "#a350ff",
-//     marginBottom: "10px",
-//     fontSize: "36px",
-//     fontWeight: "800",
-//     textShadow: "0 0 10px rgba(163, 80, 255, 0.4)",
-//   },
-//   subtitle: {
-//     textAlign: "center",
-//     color: "#b0b0c2",
-//     marginBottom: "30px",
-//     fontSize: "18px",
-//   },
-//   languageGrid: {
-//     display: "grid",
-//     gridTemplateColumns: "repeat(2, 1fr)",
-//     gap: "20px",
-//     marginBottom: "30px",
-//   },
-//   languageItem: (isSelected) => ({
-//     display: "flex",
-//     alignItems: "center",
-//     justifyContent: "space-between",
-//     padding: "15px 25px",
-//     borderRadius: "12px",
-//     cursor: "pointer",
-//     border: isSelected ? "2px solid #39ff14" : "2px solid transparent",
-//     backgroundColor: isSelected ? "#2a2a4f" : "#1e1e35",
-//     color: isSelected ? "#39ff14" : "#f0f0f0",
-//     boxShadow: isSelected
-//       ? "0 0 15px rgba(57, 255, 20, 0.5)"
-//       : "0 4px 10px rgba(0, 0, 0, 0.3)",
-//     transition: "all 0.3s ease",
-//     fontWeight: "600",
-//     fontSize: "18px",
-//     transform: isSelected ? "scale(1.02)" : "scale(1)",
-//   }),
-
-//   checkIcon: {
-//     color: "#39ff14",
-//     fontSize: "24px",
-//   },
-
-//   button: (isDisabled) => ({
-//     width: "100%",
-//     padding: "15px",
-//     borderRadius: "10px",
-//     border: "none",
-//     backgroundColor: isDisabled ? "#5a5a70" : "#a350ff",
-//     color: "white",
-//     fontSize: "18px",
-//     fontWeight: "700",
-//     cursor: isDisabled ? "not-allowed" : "pointer",
-//     marginTop: "20px",
-//     opacity: isDisabled ? 0.6 : 1,
-//     transition: "all 0.3s ease",
-//     boxShadow: isDisabled ? "none" : "0 5px 20px rgba(163, 80, 255, 0.5)",
-//   }),
-// };
-
-// const allLanguages = [
-//   "Hindi",
-//   "English",
-//   "Marathi",
-//   "Telugu",
-//   "Tamil",
-//   "Gujarati",
-//   "Urdu",
-//   "Kannada",
-//   "Bengali",
-//   "Malayalam",
-// ];
-
-// const LanguageSelection = () => {
-//   const navigate = useNavigate();
-//   const currentUser = getCurrentUser();
-//   const [selectedLanguages, setSelectedLanguages] = useState([]);
-//   const [isLoading, setIsLoading] = useState(true);
-
-//   // Load existing languages from Firestore
-//   useEffect(() => {
-//     const loadLanguages = async () => {
-//       if (!currentUser) {
-//         setIsLoading(false);
-//         return;
-//       }
-
-//       try {
-//         const userDocRef = doc(db, "users", currentUser.uid);
-//         const docSnap = await getDoc(userDocRef);
-
-//         if (docSnap.exists()) {
-//           const data = docSnap.data();
-//           const existingLanguages = data.selectedLanguages || [];
-//           setSelectedLanguages(existingLanguages);
-//         }
-//       } catch (error) {
-//         console.error("Error loading languages:", error);
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-
-//     loadLanguages();
-//   }, [currentUser]);
-
-//   const toggleLanguage = (language) => {
-//     setSelectedLanguages((prev) => {
-//       if (prev.includes(language)) {
-//         // Deselect language
-//         return prev.filter((lang) => lang !== language);
-//       } else if (prev.length < 5) {
-//         return [...prev, language];
-//       } else {
-//         alert("You can select maximum 5 languages!");
-//       }
-//       return prev;
-//     });
-//   };
-
-//   const handleProceed = async () => {
-//     if (selectedLanguages.length === 0) {
-//       alert("Please select at least one language!");
-//       return;
-//     }
-
-//     try {
-//       // Save to Firestore
-//       await updateUserProfileData({ selectedLanguages });
-
-//       // Also save to localStorage for backward compatibility
-//       localStorage.setItem("user_languages", JSON.stringify(selectedLanguages));
-//       localStorage.setItem("languages_set", "true");
-
-//       navigate("/main");
-//     } catch (error) {
-//       console.error("Error saving languages:", error);
-//       alert("Failed to save languages. Please try again.");
-//     }
-//   };
-
-//   const isProceedDisabled = selectedLanguages.length === 0;
-
-//   if (isLoading) {
-//     return (
-//       <div style={styles.container}>
-//         <div style={styles.selectionBox}>
-//           <h2 style={styles.title}>Loading...</h2>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div style={styles.container}>
-//       <div style={styles.selectionBox}>
-//         <h2 style={styles.title}>Select Your Languages</h2>
-//         <p style={styles.subtitle}>
-//           Your soundtrack begins here. Choose up to 5 languages to unlock
-//           personalized music recommendations
-//         </p>
-
-//         <div style={styles.languageGrid}>
-//           {allLanguages.map((lang) => {
-//             const isSelected = selectedLanguages.includes(lang);
-//             return (
-//               <div
-//                 key={lang}
-//                 style={styles.languageItem(isSelected)}
-//                 onClick={() => toggleLanguage(lang)}
-//                 onMouseEnter={(e) => {
-//                   if (!isSelected) {
-//                     e.currentTarget.style.backgroundColor = "#252540";
-//                     e.currentTarget.style.boxShadow =
-//                       "0 4px 20px rgba(163, 80, 255, 0.3)";
-//                   }
-//                 }}
-//                 onMouseLeave={(e) => {
-//                   if (!isSelected) {
-//                     e.currentTarget.style.backgroundColor = "#1e1e35";
-//                     e.currentTarget.style.boxShadow =
-//                       "0 4px 10px rgba(0, 0, 0, 0.3)";
-//                   }
-//                 }}
-//               >
-//                 <span>{lang}</span>
-//                 {isSelected && <FiCheckCircle style={styles.checkIcon} />}
-//               </div>
-//             );
-//           })}
-//         </div>
-
-//         <button
-//           style={styles.button(isProceedDisabled)}
-//           onClick={handleProceed}
-//           disabled={isProceedDisabled}
-//           onMouseEnter={(e) => {
-//             if (!isProceedDisabled) {
-//               e.target.style.backgroundColor = "#b571ff";
-//               e.target.style.boxShadow = "0 5px 25px rgba(181, 113, 255, 0.7)";
-//             }
-//           }}
-//           onMouseLeave={(e) => {
-//             if (!isProceedDisabled) {
-//               e.target.style.backgroundColor = "#a350ff";
-//               e.target.style.boxShadow = "0 5px 20px rgba(163, 80, 255, 0.5)";
-//             }
-//           }}
-//         >
-//           Proceed to Dashboard ({selectedLanguages.length} / 5 selected)
-//         </button>
-//         {selectedLanguages.length === 5 && (
-//           <p
-//             style={{
-//               textAlign: "center",
-//               color: styles.color.successGreen,
-//               marginTop: "10px",
-//               fontWeight: "600",
-//             }}
-//           >
-//             Maximum languages selected!
-//           </p>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default LanguageSelection;
